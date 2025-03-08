@@ -603,12 +603,24 @@ bool Database::SaveCharacterCreate(uint32 character_id, uint32 account_id, Playe
 		"x,"
 		"z,"
 		"heading,"
+		"pvp2,"
+		"pvp_type,"
 		"autosplit_enabled,"
 		"zone_change_count,"
 		"hunger_level,"
 		"thirst_level,"
 		"zone_id,"
 		"air_remaining,"
+		"pvp_kills,"
+		"pvp_deaths,"
+		"pvp_current_points,"
+		"pvp_career_points,"
+		"pvp_best_kill_streak,"
+		"pvp_worst_death_streak,"
+		"pvp_current_kill_streak,"
+		"pvp_current_death_streak,"
+		"pvp_infamy,"
+		"pvp_vitality,"
 		"aa_points_spent,"
 		"aa_exp,"
 		"aa_points,"
@@ -656,13 +668,25 @@ bool Database::SaveCharacterCreate(uint32 character_id, uint32 account_id, Playe
 		"%f,"  // y						
 		"%f,"  // x						
 		"%f,"  // z						
-		"%f,"  // heading				
+		"%f,"  // heading		
+		"%u,"  // pvp2
+		"%u,"  // pvp_type		
 		"%u,"  // autosplit_enabled		
 		"%u,"  // zone_change_count					
 		"%i,"  // hunger_level			
 		"%i,"  // thirst_level					
 		"%u,"  // zone_id						
-		"%u,"  // air_remaining			
+		"%u,"  // air_remaining		
+		"%u,"  // pvp_kills
+		"%u,"  // pvp_deaths
+		"%u,"  // pvp_current_points
+		"%u,"  // pvp_career_points
+		"%u,"  // pvp_best_kill_streak
+		"%u,"  // pvp_worst_death_streak
+		"%u,"  // pvp_current_kill_streak
+		"%u,"  // pvp_current_death_streak
+		"%u,"  // pvp_infamy
+		"%u,"  // pvp_vitality	
 		"%u,"  // aa_points_spent		
 		"%u,"  // aa_exp				
 		"%u,"  // aa_points				
@@ -711,12 +735,24 @@ bool Database::SaveCharacterCreate(uint32 character_id, uint32 account_id, Playe
 		pp->x,							  // " x,                         "
 		pp->z,							  // " z,                         "
 		pp->heading,					  // " heading,                   "
+		pp->pvp2,						  // " pvp2,                      "
+		pp->pvptype,					  // " pvp_type,                  "
 		pp->autosplit,					  // " autosplit_enabled,         "
 		pp->zone_change_count,			  // " zone_change_count,         "
 		pp->hunger_level,				  // " hunger_level,              "
 		pp->thirst_level,				  // " thirst_level,              "
 		pp->zone_id,					  // " zone_id,                   "
 		pp->air_remaining,				  // " air_remaining,             "
+		pp->PVPKills,					  // " pvp_kills,                 "
+		pp->PVPDeaths,					  // " pvp_deaths,                "
+		pp->PVPCurrentPoints,			  // " pvp_current_points,        "
+		pp->PVPCareerPoints,			  // " pvp_career_points,         "
+		pp->PVPBestKillStreak,			  // " pvp_best_kill_streak,      "
+		pp->PVPWorstDeathStreak,		  // " pvp_worst_death_streak,    "
+		pp->PVPCurrentKillStreak,		  // " pvp_current_kill_streak,   "
+		pp->PVPCurrentDeathStreak,		  // " pvp_current_death_streak,  "
+		pp->PVPInfamy,				  // " pvp_infamy,		  "
+		pp->PVPVitality,			  // " pvp_vitality,	
 		pp->aapoints_spent,				  // " aa_points_spent,           "
 		pp->expAA,						  // " aa_exp,                    "
 		pp->aapoints,					  // " aa_points,                 "
@@ -2668,4 +2704,67 @@ const char* Database::GetClientZoneName(const char* zone_name) {
 	}
 
 	return zone_name;
+}
+
+int Database::SharedAccountCount(int account, int account2)
+{
+	std::string query = StringFormat("SELECT COUNT(*) as `count` FROM `account_ip` WHERE `accid` = %i AND `ip` IN (SELECT `ip` FROM `account_ip` WHERE `accid` = %i)", account2, account);
+
+	auto results = QueryDatabase(query);
+
+	if (results.Success() && results.RowCount() > 0) {
+		auto row = results.begin();
+		return atoi(row[0]);
+	}
+
+	return 0;
+}
+
+int Database::SharedAccountCount(std::vector<int> account_list, int account)
+{
+	std::string id_list = "";
+
+	for (int account : account_list)
+	{
+		if (id_list == "")
+			id_list += std::to_string(account);
+		else
+			id_list += ", " + std::to_string(account);
+	}
+
+	std::string query = StringFormat("SELECT COUNT(*) as `count` FROM `account_ip` WHERE `accid` = %i AND `ip` IN (SELECT `ip` FROM `account_ip` WHERE `accid` in (%s))", account, id_list.c_str());
+
+	auto results = QueryDatabase(query);
+
+	if (results.Success() && results.RowCount() > 0) {
+		auto row = results.begin();
+		return atoi(row[0]);
+	}
+
+	return 0;
+}
+
+struct Character_PVP_Death Database::GetCharacterData(uint32 char_id)
+{
+	Character_PVP_Death data = { 0 };
+	std::string query = StringFormat("SELECT `character_data`.`id`, `character_data`.`name`, `character_data`.`race`, `character_data`.`class`, `character_data`.`level`, `character_data`.`zone_id`, `character_data`.`account_id`, `character_data`.`pvp_infamy`, `guild_members`.`guild_id` FROM `character_data` LEFT JOIN `guild_members` ON `character_data`.`id` = `guild_members`.`char_id` WHERE `character_data`.`id` = %d LIMIT 0, 1;", char_id);
+	auto results = QueryDatabase(query);
+
+	if (results.Success() && results.RowCount() == 1)
+	{
+		auto row = results.begin();
+
+		data.char_id = atoi(row[0]);
+		strcpy(data.Name, row[1]);
+		data.Race = atoi(row[2]);
+		data.Class = atoi(row[3]);
+		data.Level = atoi(row[4]);
+		data.Zone = atoi(row[5]);
+		data.Account = atoi(row[6]);
+		data.Infamy = atoi(row[7]);
+		if (row[8] != nullptr)
+			data.guild_id = atoi(row[8]);
+	}
+
+	return data;
 }

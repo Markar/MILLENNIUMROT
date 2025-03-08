@@ -219,6 +219,10 @@
 #define ServerOP_QSPlayerQGlobalUpdates				0x5023
 #define ServerOP_QSPlayerLootRecords				0x5024
 
+/*PvP*/
+#define ServerOP_PVPStatData 0x6010
+#define ServerOP_HandlePVPKill 0x6011
+
 /*Quarm*/
 #define ServerOP_QuakeImminent 0x4200
 #define ServerOP_QuakeRequest 0x4201
@@ -719,6 +723,30 @@ struct UsertoWorldRequest_Struct {
 	uint32	ToID;
 	char	IPAddr[64];
 	char	forum_name[31];
+};
+
+enum PVPStatDataType { STAT_MISS = 0, STAT_MELEE = 1, STAT_RANGED = 2, STAT_THROWING = 3, STAT_SPECIAL_ATTACK = 4, STAT_SPELL_DIRECT = 5, STAT_SPELL_DOT = 6, STAT_DISPEL = 7, STAT_KILL = 8, STAT_OVERKILL_DAMAGE = 9, STAT_LAST_HIT = 10 };
+
+
+struct PVPStatData_Struct {
+	char				Source[32];
+	char				Target[32];
+	char				Zone[32];
+	PVPStatDataType		Type;
+	int32				Value;
+	uint32				Time;
+	uint32				Sequence;
+};
+
+struct HandlePVPKill_Struct {
+	char	killer_name[32];
+	char	victim_name[32];
+	uint8	victim_level;
+	uint16	victim_race;
+	uint8	victim_class;
+	uint32	victim_zone_id;
+	uint32	points;
+	uint32  infamy_stolen;
 };
 
 struct UsertoWorldResponse_Struct {

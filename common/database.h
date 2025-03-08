@@ -177,9 +177,12 @@ public:
 	void	ClearAllConsented();
 	void	ClearAllConsented(char* oname, uint32 corpse_id, LinkedList<ConsentDenied_Struct*>* purged);
 	bool	SetIPExemption(const char* accountname, uint8 amount);
+	int		SharedAccountCount(int account, int account2);
+	int		SharedAccountCount(std::vector<int> account_list, int account);
 	bool	SetMule(const char* charname);
 	bool	SetMule(const char* accountname, uint8 toggle);
 	bool	SetExpansion(const char* accountname, uint8 toggle);
+	struct Character_PVP_Death	GetCharacterData(uint32 char_id);
 
 	/*
 	* Groups

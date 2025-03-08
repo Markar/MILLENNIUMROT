@@ -479,6 +479,15 @@ public:
 	/* QGlobals   */
 	void QGlobalPurge();
 
+	/* PVP Stats */
+	void LoadCharacterPVPRecentKills(uint32 character_id, PlayerProfile_Struct* pp);
+	void GetPVPKillsLast24Hours(Client* client, PVPStats_Struct* pvps);	
+	void RegisterPVPKill(Client* victim, Client* killer, uint32 points, uint32 infamy);
+	void RegisterPVPKill(Client* victim, uint32 killer_char_id, const char* killer_name, uint8 killer_level, uint32 points, uint32 infamy);
+	void RegisterPVPKill(std::string query_values_string);
+	std::string GetPVPKillQueryStringValue(Client* killer, Client* victim, uint32 points, uint32 infamy);
+	void HandlePVPKill(Client* victim, uint32 points, uint32 char_id, const char* name, uint8 level);
+
 	/*MBMessages*/
 	bool RetrieveMBMessages(uint16 category, std::vector<MBMessageRetrievalGen_Struct>& outData);
 	bool PostMBMessage(uint32 charid, const char* charName, MBMessageRetrievalGen_Struct* inData);

@@ -306,6 +306,22 @@ public:
 	int WorldPVPMinLevel();
  	int GetAlignment();
 	int GetPVPRaceTeamBySize();
+	void SetPVPPoints(uint32 Points) { m_pp.PVPCurrentPoints = Points; }
+	void GivePVPPoints(uint32 Points) { m_pp.PVPCurrentPoints += Points; }
+	void SetPVPInfamy(uint32 Infamy) { m_pp.PVPInfamy = Infamy; }
+	uint32 GetPVPPoints() { return m_pp.PVPCurrentPoints; }
+	uint32 GetPVPInfamy() { return m_pp.PVPInfamy; }
+	uint32 GetLifetimePVPPoints() { return m_pp.PVPCareerPoints; }
+	uint32 CalculatePVPPoints(uint8 killer_level, uint32 killer_PVPInfamy, uint8 victim_level, uint32 infamy_stolen, uint32 total_infamy_stolen, uint8 group_player_count, uint32 minimum_points_overflow_spent = 0);
+
+	void AddPVPPoints(uint32 Points);
+	void AddPVPInfamy(uint32 Infamy);
+	void ProcessPVPDeath(Mob* killer, uint16 spell);
+	uint32 GetInfamyStealAmount(Client* victim);
+	void HandlePVPDeath(const char* killer_name, uint8 killer_level, uint16 killer_race, uint8 killer_class, uint32 killer_zone_id, uint32 infamy_lost = 0, uint32 points = 0, bool is_victim_naked = false);
+	void HandlePVPKill(const char* victim_name, uint8 victim_level, uint16 victim_race, uint8 victim_class, uint32 victim_zone_id, uint32 infamy_gained = 0, uint32 points = 0);
+	void SendPVPStats();
+
 	
 
 	void	AI_Init();
@@ -801,6 +817,9 @@ public:
 	uint64	GetCarriedMoney();
 	uint64	GetAllMoney();
 
+	bool GetCanPoints();
+	void SetPointTime();
+
 	void ResetStartingSkills();
 	void SetRaceStartingSkills();
 	void SetRacialLanguages();
@@ -965,6 +984,8 @@ public:
 	bool	PushItemOnCursor(const EQ::ItemInstance& inst, bool client_update = false);
 	bool	PushItemOnCursorWithoutQueue(EQ::ItemInstance* inst, bool drop = false);
 	void	DeleteItemInInventory(int16 slot_id, int8 quantity = 0, bool client_update = false, bool update_db = true);
+	bool IsCharacterNaked();
+
 	bool	SwapItem(MoveItem_Struct* move_in);
 	void	SwapItemResync(MoveItem_Struct* move_slots);
 	void	QSSwapItemAuditor(MoveItem_Struct* move_in, bool postaction_call = false);
@@ -1581,6 +1602,7 @@ private:
 	bool InterrogateInventory_error(int16 head, int16 index, const EQ::ItemInstance* inst, const EQ::ItemInstance* parent, int depth);
 
 	void UpdateZoneChangeCount(uint32 zoneid);
+
 
 	bool clicky_override; // On AK, clickies with 0 casttime did not enforce any restrictions (level, regeant consumption, etc) 
 	uint8 active_disc;

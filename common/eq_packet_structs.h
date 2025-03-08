@@ -642,6 +642,21 @@ static const uint32 MAX_PP_REF_MEMSPELL = 8; // Set for Player Profile size reta
 static const uint32 MAX_PP_SKILL		= PACKET_SKILL_ARRAY_SIZE;	// 100 - actual skills buffer size
 static const uint32 MAX_PP_AA_ARRAY		= 240;
 
+
+typedef struct
+{
+/*00*/ char Name[64];
+/*64*/ uint32 Level;
+/*68*/ uint32 Race;
+/*72*/ uint32 Class;
+/*76*/ uint32 Zone;
+/*80*/ uint32 Time;
+/*84*/ uint32 Points;
+/*88*/
+} PVPStatsEntry_Struct;
+
+
+
 // This should be treated as an internal struct
 struct PlayerProfile_Struct
 {
@@ -734,6 +749,22 @@ struct PlayerProfile_Struct
 	/*4961*/    int16    hunger_level;
 	/*4962*/	int8   fatigue;
 	/*4963*/	uint8	pvp;				// Player PVP Flag
+	/*5380*/	uint32				pvp2;				//
+	/*5388*/	uint32				pvptype;			//
+	/*8188*/	uint32				PVPKills;
+	/*8192*/	uint32				PVPDeaths;
+	/*8196*/	uint32				PVPCurrentPoints;
+	/*8200*/	uint32				PVPCareerPoints;
+	/*8204*/	uint32				PVPBestKillStreak;
+	/*8208*/	uint32				PVPWorstDeathStreak;
+	/*8212*/	uint32				PVPCurrentKillStreak;
+	/*8212*/	uint32				PVPCurrentDeathStreak;
+	/*8214*/	uint32				PVPInfamy;
+	/*8213*/	uint32				PVPVitality;
+	/*8216*/	PVPStatsEntry_Struct	PVPLastKill;
+/*8304*/	PVPStatsEntry_Struct	PVPLastDeath;
+	/*8392*/	uint32				PVPNumberOfKillsInLast24Hours;
+	/*8396*/	PVPStatsEntry_Struct	PVPRecentKills[50];
 	/*4964*/	uint8	level2;
 	/*4965*/	uint8	anon;				// Player Anon. Flag
 	/*4966*/	uint8	gm;					// Player GM Flag
@@ -799,6 +830,22 @@ struct PlayerProfile_Struct
 };
 
 
+struct PVPStats_Struct
+{
+/*0000*/ uint32 Kills;
+/*0004*/ uint32 Deaths;
+/*0008*/ uint32 PVPPointsAvailable;
+/*0012*/ uint32 TotalPVPPoints;
+/*0016*/ uint32 BestKillStreak;
+/*0020*/ uint32 WorstDeathStreak;
+/*0024*/ uint32 CurrentKillStreak;
+/*0028*/ uint32 Infamy;
+/*0032*/ uint32 Vitality;
+/*0036*/ PVPStatsEntry_Struct LastDeath;
+/*0124*/ PVPStatsEntry_Struct LastKill;
+/*0212*/ PVPStatsEntry_Struct KillsLast24Hours[50];
+/*4612*/
+};
 
 
 /*
@@ -962,6 +1009,23 @@ struct Consider_Struct
 	/*020*/ uint8	pvpcon;			// Pvp con flag 0/1
 	/*021*/ uint8	unknown3[3];
 	/*024*/
+};
+
+
+
+
+
+
+struct Character_PVP_Death {
+	uint32 char_id;
+	char Name[64];
+	uint8 Class;
+	uint32 Race;
+	uint8 Level;
+	uint16 Zone;
+	uint32 Account;
+	uint32 Infamy;
+	uint32 guild_id;
 };
 
   struct Death_Struct
@@ -2824,6 +2888,9 @@ namespace ChallengeRules {
 	};
 
 }
+
+	
+
 
 struct PlayerEngagementRecord
 {

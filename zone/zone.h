@@ -327,6 +327,7 @@ public:
 
 	void LoadTickItems();
 	void LoadGrids();
+
 	uint32  GetSpawnKillCount(uint32 in_spawnid);
 	std::unordered_map<int, item_tick_struct> tick_items;
 

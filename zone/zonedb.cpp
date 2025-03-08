@@ -741,12 +741,38 @@ bool ZoneDatabase::LoadCharacterData(uint32 character_id, PlayerProfile_Struct* 
 		"x,                         "
 		"z,                         "
 		"heading,                   "
+		"pvp2,                      "
+		"pvp_type,                  "
 		"autosplit_enabled,         "
 		"zone_change_count,         "
 		"hunger_level,              "
 		"thirst_level,              "
 		"zone_id,                   "
 		"air_remaining,             "
+		"pvp_kills,                 "
+		"pvp_deaths,                "
+		"pvp_current_points,        "
+		"pvp_career_points,         "
+		"pvp_best_kill_streak,      "
+		"pvp_worst_death_streak,    "
+		"pvp_current_kill_streak,   "
+		"pvp_current_death_streak,  "
+		"pvp_infamy,				"
+		"pvp_vitality,				"
+		"pvp_lastkill_name,			"
+		"pvp_lastkill_level,		"
+		"pvp_lastkill_race,			"
+		"pvp_lastkill_class,		"
+		"pvp_lastkill_zone,			"
+		"pvp_lastkill_time,			"
+		"pvp_lastkill_points,		"
+		"pvp_lastdeath_name,		"
+		"pvp_lastdeath_level,		"
+		"pvp_lastdeath_race,		"
+		"pvp_lastdeath_class,		"
+		"pvp_lastdeath_zone,		"
+		"pvp_lastdeath_time,		"
+		"pvp_lastdeath_points,		"
 		"aa_points_spent,           "
 		"aa_exp,                    "
 		"aa_points,                 "
@@ -811,12 +837,38 @@ bool ZoneDatabase::LoadCharacterData(uint32 character_id, PlayerProfile_Struct* 
 		pp->x = atof(row[r]); r++;												 // "x,                         "
 		pp->z = atof(row[r]); r++;												 // "z,                         "
 		pp->heading = atof(row[r]); r++;										 // "heading,                   "
+		pp->pvp2 = atoi(row[r]); r++;											 // "pvp2,                      "
+		pp->pvptype = atoi(row[r]); r++;										 // "pvp_type,                  "
 		pp->autosplit = atoi(row[r]); r++;										 // "autosplit_enabled,         "
 		pp->zone_change_count = atoi(row[r]); r++;								 // "zone_change_count,         "
 		pp->hunger_level = atoi(row[r]); r++;									 // "hunger_level,              "
 		pp->thirst_level = atoi(row[r]); r++;									 // "thirst_level,              "
 		pp->zone_id = atoi(row[r]); r++;										 // "zone_id,                   "
 		pp->air_remaining = atoi(row[r]); r++;									 // "air_remaining,             "
+		pp->PVPKills = atoi(row[r]); r++;										 // "pvp_kills,                 "
+		pp->PVPDeaths = atoi(row[r]); r++;										 // "pvp_deaths,                "
+		pp->PVPCurrentPoints = atoi(row[r]); r++;								 // "pvp_current_points,        "
+		pp->PVPCareerPoints = atoi(row[r]); r++;								 // "pvp_career_points,         "
+		pp->PVPBestKillStreak = atoi(row[r]); r++;								 // "pvp_best_kill_streak,      "
+		pp->PVPWorstDeathStreak = atoi(row[r]); r++;							 // "pvp_worst_death_streak,    "
+		pp->PVPCurrentKillStreak = atoi(row[r]); r++;							 // "pvp_current_kill_streak,   "
+		pp->PVPCurrentDeathStreak = atoi(row[r]); r++;							 // "pvp_current_death_streak,  "
+		pp->PVPInfamy = atoi(row[r]); r++;										 // "pvp_infamy,				"
+		pp->PVPVitality = atoi(row[r]); r++;									 // "pvp_vitality,				"
+		strcpy(pp->PVPLastKill.Name, row[r]); r++;								 // "pvp_lastkill_name,			"
+		pp->PVPLastKill.Level = atoi(row[r]); r++;								 // "pvp_lastkill_level,		"
+		pp->PVPLastKill.Race = atoi(row[r]); r++;								 // "pvp_lastkill_race,			"
+		pp->PVPLastKill.Class = atoi(row[r]); r++;								 // "pvp_lastkill_class,		"
+		pp->PVPLastKill.Zone = atoi(row[r]); r++;								 // "pvp_lastkill_zone,			"
+		pp->PVPLastKill.Time = atoi(row[r]); r++;								 // "pvp_lastkill_time,			"
+		pp->PVPLastKill.Points = atoi(row[r]); r++;								 // "pvp_lastkill_points,		"
+		strcpy(pp->PVPLastDeath.Name, row[r]); r++;								 // "pvp_lastdeath_name,		"
+		pp->PVPLastDeath.Level = atoi(row[r]); r++;								 // "pvp_lastdeath_level,		"
+		pp->PVPLastDeath.Race = atoi(row[r]); r++;								 // "pvp_lastdeath_race,		"
+		pp->PVPLastDeath.Class = atoi(row[r]); r++;								 // "pvp_lastdeath_class,		"
+		pp->PVPLastDeath.Zone = atoi(row[r]); r++;								 // "pvp_lastdeath_zone,		"
+		pp->PVPLastDeath.Time = atoi(row[r]); r++;								 // "pvp_lastdeath_time,		"
+		pp->PVPLastDeath.Points = atoi(row[r]); r++;							 // "pvp_lastdeath_points,		"
 		pp->aapoints_spent = atoi(row[r]); r++;									 // "aa_points_spent,           "
 		pp->expAA = atoi(row[r]); r++;											 // "aa_exp,                    "
 		pp->aapoints = atoi(row[r]); r++;										 // "aa_points,                 "
@@ -1189,12 +1241,38 @@ bool ZoneDatabase::SaveCharacterData(uint32 character_id, uint32 account_id, Pla
 		" x,                         "
 		" z,                         "
 		" heading,                   "
+		" pvp2,                      "
+		" pvp_type,                  "
 		" autosplit_enabled,         "
 		" zone_change_count,         "
 		" hunger_level,              "
 		" thirst_level,              "
 		" zone_id,                   "
 		" air_remaining,             "
+		" pvp_kills,                 "
+		" pvp_deaths,                "
+		" pvp_current_points,        "
+		" pvp_career_points,         "
+		" pvp_best_kill_streak,      "
+		" pvp_worst_death_streak,    "
+		" pvp_current_kill_streak,   "
+		" pvp_current_death_streak,  "
+		" pvp_infamy,				 "
+		" pvp_vitality,				 "
+		" pvp_lastkill_name,		 "
+		" pvp_lastkill_level,		 "
+		" pvp_lastkill_race,		 "
+		" pvp_lastkill_class,		 "
+		" pvp_lastkill_zone,		 "
+		" pvp_lastkill_time,		 "
+		" pvp_lastkill_points,		 "
+		" pvp_lastdeath_name,		 "
+		" pvp_lastdeath_level,		 "
+		" pvp_lastdeath_race,		 "
+		" pvp_lastdeath_class,		 "
+		" pvp_lastdeath_zone,		 "
+		" pvp_lastdeath_time,		 "
+		" pvp_lastdeath_points,		 "
 		" aa_points_spent,           "
 		" aa_exp,                    "
 		" aa_points,                 "
@@ -1259,12 +1337,38 @@ bool ZoneDatabase::SaveCharacterData(uint32 character_id, uint32 account_id, Pla
 		"%f,"  // x							  pp->x,								" x,                         "
 		"%f,"  // z							  pp->z,								" z,                         "
 		"%f,"  // heading					  pp->heading,							" heading,                   "
+		"%u,"  // pvp2						  pp->pvp2,								" pvp2,                      "
+		"%u,"  // pvp_type					  pp->pvptype,							" pvp_type,                  "
 		"%u,"  // autosplit_enabled			  pp->autosplit,						" autosplit_enabled,         "
 		"%u,"  // zone_change_count			  pp->zone_change_count,				" zone_change_count,         "
 		"%i,"  // hunger_level				  pp->hunger_level,						" hunger_level,              "
 		"%i,"  // thirst_level				  pp->thirst_level,						" thirst_level,              "
 		"%u,"  // zone_id					  pp->zone_id,							" zone_id,                   "
 		"%u,"  // air_remaining				  pp->air_remaining,					" air_remaining,             "
+		"%u,"  // pvp_kills					  pp->PVPKills,							" pvp_kills,                 "
+		"%u,"  // pvp_deaths				  pp->PVPDeaths,						" pvp_deaths,                "
+		"%u,"  // pvp_current_points		  pp->PVPCurrentPoints,					" pvp_current_points,        "
+		"%u,"  // pvp_career_points			  pp->PVPCareerPoints,					" pvp_career_points,         "
+		"%u,"  // pvp_best_kill_streak		  pp->PVPBestKillStreak,				" pvp_best_kill_streak,      "
+		"%u,"  // pvp_worst_death_streak	  pp->PVPWorstDeathStreak,				" pvp_worst_death_streak,    "
+		"%u,"  // pvp_current_kill_streak	  pp->PVPCurrentKillStreak,				" pvp_current_kill_streak,   "
+		"%u,"  // pvp_current_death_streak	  pp->PVPCurrentDeathStreak,			" pvp_current_death_streak,  "
+		"%u,"  // pvp_infamy                  pp->PVPInfamy,						" pvp_infamy,				 "
+		"%u,"  // pvp_vitality                pp->PVPVitality,						" pvp_vitality,				 "
+		"'%s',"// pvp_lastkill_name           pp->LastKill.Name,					" pvp_lastkill_name,		 "
+		"%u,"  // pvp_lastkill_level          pp->LastKill.Level,					" pvp_lastkill_level,		 "
+		"%u,"  // pvp_lastkill_race           pp->LastKill.Race,					" pvp_lastkill_race,		 "
+		"%u,"  // pvp_lastkill_class          pp->LastKill.Class,					" pvp_lastkill_class,		 "
+		"%u,"  // pvp_lastkill_zone           pp->LastKill.Zone,					" pvp_lastkill_zone,		 "
+		"%u,"  // pvp_lastkill_time           pp->LastKill.Time,					" pvp_lastkill_time,		 "
+		"%u,"  // pvp_lastkill_points         pp->LastKill.Points,					" pvp_lastkill_points,		 "
+		"'%s',"// pvp_lastdeath_name          pp->LastDeath.Name,					" pvp_lastdeath_name,		 "
+		"%u,"  // pvp_lastdeath_level         pp->LastDeath.Level,					" pvp_lastdeath_level,		 "
+		"%u,"  // pvp_lastdeath_race          pp->LastDeath.Race,					" pvp_lastdeath_race,		 "
+		"%u,"  // pvp_lastdeath_class         pp->LastDeath.Class,					" pvp_lastdeath_class,		 "
+		"%u,"  // pvp_lastdeath_zone          pp->LastDeath.Zone,					" pvp_lastdeath_zone,		 "
+		"%u,"  // pvp_lastdeath_time          pp->LastDeath.Time,					" pvp_lastdeath_time,		 "
+		"%u,"  // pvp_lastdeath_points        pp->LastDeath.Points,					" pvp_lastdeath_points,		 "
 		"%u,"  // aa_points_spent			  pp->aapoints_spent,					" aa_points_spent,           "
 		"%u,"  // aa_exp					  pp->expAA,							" aa_exp,                    "
 		"%u,"  // aa_points					  pp->aapoints,							" aa_points,                 "
@@ -1328,12 +1432,38 @@ bool ZoneDatabase::SaveCharacterData(uint32 character_id, uint32 account_id, Pla
 		pp->x,							  // " x,                         "
 		pp->z,							  // " z,                         "
 		pp->heading,					  // " heading,                   "
+		pp->pvp2,						  // " pvp2,                      "
+		pp->pvptype,					  // " pvp_type,                  "
 		pp->autosplit,					  // " autosplit_enabled,         "
 		pp->zone_change_count,			  // " zone_change_count,         "
 		pp->hunger_level,				  // " hunger_level,              "
 		pp->thirst_level,				  // " thirst_level,              "
 		pp->zone_id,					  // " zone_id,                   "
 		pp->air_remaining,				  // " air_remaining,             "
+		pp->PVPKills,					  // " pvp_kills,                 "
+		pp->PVPDeaths,					  // " pvp_deaths,                "
+		pp->PVPCurrentPoints,			  // " pvp_current_points,        "
+		pp->PVPCareerPoints,			  // " pvp_career_points,         "
+		pp->PVPBestKillStreak,			  // " pvp_best_kill_streak,      "
+		pp->PVPWorstDeathStreak,		  // " pvp_worst_death_streak,    "
+		pp->PVPCurrentKillStreak,		  // " pvp_current_kill_streak,   "
+		pp->PVPCurrentDeathStreak,		  // " pvp_current_death_streak,  "
+		pp->PVPInfamy,					  // " pvp_infamy,				  "
+		pp->PVPVitality,				  // " pvp_vitality,			  "
+		Strings::Escape(pp->PVPLastKill.Name).c_str(), // " pvp_lastkill_name, "
+		pp->PVPLastKill.Level,			  // "pvp_lastkill_level,		  "
+		pp->PVPLastKill.Race,			  // "pvp_lastkill_race,		  "
+		pp->PVPLastKill.Class,			  // "pvp_lastkill_class,		  "
+		pp->PVPLastKill.Zone,			  // "pvp_lastkill_zone,		  "
+		pp->PVPLastKill.Time,			  // "pvp_lastkill_time,		  "
+		pp->PVPLastKill.Points,			  // "pvp_lastkill_points,		  "
+		Strings::Escape(pp->PVPLastDeath.Name).c_str(), // "pvp_lastdeath_name, "
+		pp->PVPLastDeath.Level,			  // "pvp_lastdeath_level,		  "
+		pp->PVPLastDeath.Race,			  // "pvp_lastdeath_race,		  "
+		pp->PVPLastDeath.Class,			  // "pvp_lastdeath_class,		  "
+		pp->PVPLastDeath.Zone,			  // "pvp_lastdeath_zone,		  "
+		pp->PVPLastDeath.Time,			  // "pvp_lastdeath_time,		  "
+		pp->PVPLastDeath.Points,		  // "pvp_lastdeath_points,		  "
 		pp->aapoints_spent,				  // " aa_points_spent,           "
 		pp->expAA,						  // " aa_exp,                    "
 		pp->aapoints,					  // " aa_points,                 "
@@ -4160,4 +4290,98 @@ bool ZoneDatabase::GetZoneBanishPoint(ZoneBanishPoint& into_zbp, const char* des
 	into_zbp.heading = atof(row[4]);
 
 	return true;
+}
+
+void ZoneDatabase::LoadCharacterPVPRecentKills(uint32 character_id, PlayerProfile_Struct* pp)
+{
+	int count = 0;
+
+	std::string query = StringFormat("SELECT `victim_name`, `victim_level`, `victim_race`, `victim_class`, `zone`, `timestamp`, `points` FROM `character_pvp_entries` WHERE `killer_id` = %i AND `timestamp` <= TIMESTAMPADD(DAY, 1, NOW()) ORDER BY `timestamp` DESC LIMIT 50", character_id);
+
+	auto results = QueryDatabase(query);
+
+	if (!results.Success()) {
+		//LogError(results.ErrorMessage().c_str());
+		return;
+	}
+
+	if (results.RowCount() == 0) {
+		//LogDebug("ZoneDatabase::LoadCharacterPVPRecentKills: character_id [{}], No results found.", character_id);
+		return;
+	}
+
+	for (auto row = results.begin(); row != results.end(); ++row) {
+		strcpy(pp->PVPRecentKills[count].Name, row[0]);
+		pp->PVPRecentKills[count].Level = atoi(row[1]);
+		pp->PVPRecentKills[count].Race = atoi(row[2]);
+		pp->PVPRecentKills[count].Class = atoi(row[3]);
+		pp->PVPRecentKills[count].Zone = atoi(row[4]);
+		pp->PVPRecentKills[count].Time = atoi(row[5]);
+		pp->PVPRecentKills[count].Points = atoi(row[6]);
+		count++;
+	}
+	pp->PVPNumberOfKillsInLast24Hours = count;
+}
+
+void ZoneDatabase::GetPVPKillsLast24Hours(Client* killer, PVPStats_Struct* pvps)
+{
+	int count = 0;
+
+	std::string query = StringFormat("SELECT `victim_name`, `victim_level`, `victim_race`, `victim_class`, `zone`, `timestamp`, `points` FROM `character_pvp_entries` WHERE `killer_id` = %i AND `timestamp` <= TIMESTAMPADD(DAY, 1, NOW()) ORDER BY `timestamp` DESC LIMIT 50", killer->CharacterID());
+
+	auto results = QueryDatabase(query);
+
+	if (!results.Success()) {
+	//	LogError(results.ErrorMessage().c_str());
+		return;
+	}
+
+	if (results.RowCount() == 0) {
+	//	LogDebug("ZoneDatabase::GetPVPKillsLast24Hours: No results found.");
+		return;
+	}
+
+	for (auto row = results.begin(); row != results.end(); ++row) {
+		strcpy(pvps->KillsLast24Hours[count].Name, row[0]);
+		pvps->KillsLast24Hours[count].Level = atoi(row[1]);
+		pvps->KillsLast24Hours[count].Race = atoi(row[2]);
+		pvps->KillsLast24Hours[count].Class = atoi(row[3]);
+		pvps->KillsLast24Hours[count].Zone = atoi(row[4]);
+		pvps->KillsLast24Hours[count].Time = atoi(row[5]);
+		pvps->KillsLast24Hours[count].Points = atoi(row[6]);
+
+		count++;
+	}
+}
+
+void ZoneDatabase::HandlePVPKill(Client* victim, uint32 points, uint32 char_id, const char* name, uint8 level)
+{
+	std::string query = StringFormat("UPDATE `character_pvp_entries` (`killer_id`, `killer_name`, `killer_level`, `victim_id`, `victim_name`, `victim_level`, `victim_race`, `victim_class`, `zone`, `points`, `timestamp`) VALUES (%i,'%s',%i,%i,'%s',%i,%i,%i,%i,%i,UNIX_TIMESTAMP())",
+		char_id, name, level, victim->CharacterID(), victim->GetName(), victim->GetLevel(), victim->GetRace(), victim->GetClass(), zone->GetZoneID(), points);
+	QueryDatabase(query);
+}
+
+void ZoneDatabase::RegisterPVPKill(Client* victim, Client* killer, uint32 points, uint32 infamy)
+{
+	std::string query = StringFormat("INSERT INTO `character_pvp_entries` (`killer_id`, `killer_name`, `killer_level`, `victim_id`, `victim_name`, `victim_level`, `victim_race`, `victim_class`, `zone`, `points`, `infamy`, `timestamp`) VALUES (%i,'%s',%i,%i,'%s',%i,%i,%i,%i,%i,%i,UNIX_TIMESTAMP())",
+		killer->CharacterID(), killer->GetName(), killer->GetLevel(), victim->CharacterID(), victim->GetName(), victim->GetLevel(), victim->GetRace(), victim->GetClass(), zone->GetZoneID(), points, infamy);
+	QueryDatabase(query);
+}
+
+void ZoneDatabase::RegisterPVPKill(Client* victim, uint32 killer_char_id, const char* killer_name, uint8 killer_level, uint32 points, uint32 infamy)
+{
+	std::string query = StringFormat("INSERT INTO `character_pvp_entries` (`killer_id`, `killer_name`, `killer_level`, `victim_id`, `victim_name`, `victim_level`, `victim_race`, `victim_class`, `zone`, `points`, `infamy`, `timestamp`) VALUES (%i,'%s',%i,%i,'%s',%i,%i,%i,%i,%i,%i,UNIX_TIMESTAMP())",
+		killer_char_id, killer_name, killer_level, victim->CharacterID(), victim->GetName(), victim->GetLevel(), victim->GetRace(), victim->GetClass(), zone->GetZoneID(), points, infamy);
+	QueryDatabase(query);
+}
+
+void ZoneDatabase::RegisterPVPKill(std::string query_values_string)
+{
+	QueryDatabase("INSERT INTO `character_pvp_entries` (`killer_id`, `killer_name`, `killer_level`, `victim_id`, `victim_name`, `victim_level`, `victim_race`, `victim_class`, `zone`, `points`, `infamy`, `timestamp`) VALUES " + query_values_string);
+}
+
+std::string ZoneDatabase::GetPVPKillQueryStringValue(Client* killer, Client* victim, uint32 points, uint32 infamy)
+{
+	return StringFormat("(%i,'%s',%i,%i,'%s',%i,%i,%i,%i,%i,%i,UNIX_TIMESTAMP())",
+		killer->CharacterID(), killer->GetName(), killer->GetLevel(), victim->CharacterID(), victim->GetName(), victim->GetLevel(), victim->GetRace(), victim->GetClass(), zone->GetZoneID(), points, infamy);
 }

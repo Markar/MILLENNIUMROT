@@ -30,6 +30,30 @@
 class Client;
 class ServerPacket;
 
+struct StatCompile_Struct {
+	int MeleeHits;
+	int MeleeDamage;
+	int SpellHits;
+	int SpellDamage;
+	int Dispels;
+};
+
+class PVPStats {
+	public:
+		PVPStats();
+		~PVPStats();
+		
+		void AddData(PVPStatData_Struct data);
+		
+	private:
+		void Process();
+		
+		void GenerateKillData(std::string killer, std::string killee, std::string zonename);
+	
+		std::map<std::string, std::list<PVPStatData_Struct> > m_data;
+		
+		time_t m_processTimer;
+	};
 
 class ZoneServer : public WorldTCPConnection {
 public:
@@ -80,6 +104,8 @@ public:
 private:
 	std::shared_ptr<EQ::Net::ServertalkServerConnection> tcpc;
 	std::unique_ptr<EQ::Timer> boot_timer_obj;
+	
+	PVPStats*	m_pvpstats;
 
 	uint32	zone_server_id;
 	char	client_address[250];

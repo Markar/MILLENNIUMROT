@@ -40,6 +40,7 @@ public:
 
 	bool LoadCharacterCreateAllocations();
 	bool LoadCharacterCreateCombos();
+	void InsertKillStats(std::string myjson);
 	bool LoadSoulMarksForClient(uint32 charid, std::vector<SoulMarkEntry_Struct>& outData);
 	bool GITInfo();
 protected:

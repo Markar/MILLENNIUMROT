@@ -268,7 +268,7 @@ void MapOpcodes()
 	ConnectedOpcodes[OP_Feedback] = &Client::Handle_OP_Feedback;
 	ConnectedOpcodes[OP_SoulMarkUpdate] = &Client::Handle_OP_SoulMarkUpdate;
 	ConnectedOpcodes[OP_SoulMarkList] = &Client::Handle_OP_SoulMarkList;
-	ConnectedOpcodes[OP_SoulMarkAdd] = &Client::Handle_OP_SoulMarkAdd;
+	//ConnectedOpcodes[OP_SoulMarkAdd] = &Client::Handle_OP_SoulMarkAdd;
 	ConnectedOpcodes[OP_MBRetrievalRequest] = &Client::Handle_OP_MBRetrievalRequest;
 	ConnectedOpcodes[OP_MBRetrievalDetailRequest] = &Client::Handle_OP_MBRetrievalDetailRequest;
 	ConnectedOpcodes[OP_MBRetrievalPostRequest] = &Client::Handle_OP_MBRetrievalPostRequest;
@@ -382,6 +382,7 @@ void Client::CompleteConnect()
 	autosave_timer.Start();
 	SetDuelTarget(0);
 	SetDueling(false);
+	SendPVPStats();
 
 	ZoneFlags.Clear();
 	LoadZoneFlags(&ZoneFlags);
@@ -1303,6 +1304,7 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 	database.LoadCharacterBindPoint(cid, &m_pp); /* Load Character Bind */
 	database.LoadCharacterCurrency(cid, &m_pp); /* Load Character Currency into PP */
 	database.LoadCharacterData(cid, &m_pp, &m_epp); /* Load Character Data from DB into PP as well as E_PP */
+	database.LoadCharacterPVPRecentKills(cid, &m_pp); /* Load Character PVP Recent 50 Kills*/
 	database.LoadCharacterSkills(cid, &m_pp); /* Load Character Skills */
 	database.LoadCharacterSpellBook(cid, &m_pp); /* Load Character Spell Book */
 	database.LoadCharacterMemmedSpells(cid, &m_pp);  /* Load Character Memorized Spells */

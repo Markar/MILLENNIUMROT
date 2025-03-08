@@ -240,6 +240,14 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, CharacterSelect_Struct*
 	return;
 }
 
+
+
+void WorldDatabase::InsertKillStats(std::string myjson)
+{
+	std::string query = StringFormat(R"(INSERT INTO pvp_stats2 (report, time) VALUES ('%s', NOW()))", myjson.c_str());
+	QueryDatabase(query);
+}
+
 void WorldDatabase::ClearHardcoreCharacters(int AccID) {
 	/* Get Character Info */
 	std::string cquery = StringFormat(

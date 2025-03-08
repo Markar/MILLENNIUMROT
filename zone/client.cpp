@@ -8134,3 +8134,391 @@ bool Client::PVPLevelDifference(Client *c)
 {
 	return PVPLevelDifference(c->GetLevel());
 }
+
+uint32 Client::GetInfamyStealAmount(Client* victim)
+{
+	return static_cast<int>(floor(static_cast<float>(victim->m_pp.PVPInfamy) * RuleR(PVP, InfamyStealPercentage) / 100.0f));
+}
+
+uint32 Client::CalculatePVPPoints(
+	uint8 killer_level,
+	uint32 killer_PVPInfamy,
+	uint8 victim_level,
+	uint32 infamy_stolen,
+	uint32 total_infamy_stolen,
+	uint8 group_player_count,
+	uint32 minimum_points_overflow_spent)
+{
+	float points;
+	int level_difference = killer_level - victim_level;
+
+	// percentage of victim's infamy that contributes toward point total
+	points = static_cast<float>(infamy_stolen) * RuleR(PVP, PointsGeneratedFromVictimInfamyPercentage) / 100.0f;
+
+	if (group_player_count > 1) {
+		// check if the total base points generated among the group is lower than the minimum point value
+		// if so, add overflow determined by modulo to the points generated for this killer
+		// used to ensure that the sum of base points across an entire group are equivalent to the minimum point value in this case
+		float total_base_points = static_cast<float>(total_infamy_stolen) * RuleR(PVP, PointsGeneratedFromVictimInfamyPercentage) / 100.0f;
+		LogDebug("Client::CalculatePVPPoints(): total base points [{}], minimum point value [{}]", total_base_points, RuleI(PVP, MinimumPointsOnKill));
+		if (total_base_points < RuleI(PVP, MinimumPointsOnKill) && minimum_points_overflow_spent < RuleI(PVP, MinimumPointsOnKill) % group_player_count)
+		{
+			points++;
+			minimum_points_overflow_spent++;
+		}
+	}
+	else {
+		points = std::max(points, static_cast<float>(RuleI(PVP, MinimumPointsOnKill)));
+	}
+
+	// percentage of killer's infamy that contributes toward point total
+	points += static_cast<float>(killer_PVPInfamy) * RuleR(PVP, PointsGeneratedFromKillerInfamyPercentage) / static_cast<float>(group_player_count) / 100.0f;
+
+	// 5% penalty for each level if the killer is higher level than the victim
+	// 5% bonus for each level if the killer is lower level than the victim
+	points *= 1.0 + -(static_cast<float>(level_difference)) * RuleR(PVP, LevelWeightMultiplierPercentage) / 100.0f;
+
+	LogDebug("Client::CalculatePVPPoints(): level weight multiplier percentage [{}], level difference [{}], infamy stolen [{}], killer infamy [{}], final points [{}]",
+		RuleR(PVP, LevelWeightMultiplierPercentage), level_difference, infamy_stolen, killer_PVPInfamy, points);
+
+	// set points to the maximum if calculated value is higher
+	points = std::min(points, static_cast<float>(RuleI(PVP, MaximumPointsOnKill)) / static_cast<float>(group_player_count));
+	
+	points = floor(points);
+	LogDebug("Client::CalculatePVPPoints(): final points [{}]", points);
+
+	return static_cast<uint32>(points);
+}
+
+void Client::HandlePVPDeath(const char* killer_name, uint8 killer_level, uint16 killer_race, uint8 killer_class, uint32 killer_zone_id, uint32 infamy_lost, uint32 points, bool is_victim_naked)
+{
+	uint32 points_awarded = 0;
+	
+	m_pp.PVPDeaths += 1;
+	m_pp.PVPInfamy -= infamy_lost;
+	if (!is_victim_naked && points > 0 && infamy_lost > 0)
+	{
+		points_awarded = RuleI(PVP, PointsAwardedToVictim);
+		m_pp.PVPCurrentPoints += points_awarded;
+		m_pp.PVPCareerPoints += points_awarded;
+	}
+	m_pp.PVPCurrentKillStreak = 0;
+	m_pp.PVPCurrentDeathStreak += 1;
+	if (m_pp.PVPCurrentDeathStreak > m_pp.PVPWorstDeathStreak)
+		m_pp.PVPWorstDeathStreak = m_pp.PVPCurrentDeathStreak;
+	strcpy(m_pp.PVPLastDeath.Name, killer_name);
+	m_pp.PVPLastDeath.Level = killer_level;
+	m_pp.PVPLastDeath.Race = killer_race;
+	m_pp.PVPLastDeath.Class = killer_class;
+	m_pp.PVPLastDeath.Zone = killer_zone_id;
+	m_pp.PVPLastDeath.Time = time(nullptr);
+	m_pp.PVPLastDeath.Points = points;
+
+	this->Message(Chat::Yellow, "You have earned %d PvP Point(s) and lost %d PvP Infamy.", points_awarded, infamy_lost);
+
+	SetPointTime();
+}
+
+void Client::HandlePVPKill(const char* victim_name, uint8 victim_level, uint16 victim_race, uint8 victim_class, uint32 victim_zone_id, uint32 infamy_gained, uint32 points)
+{
+	m_pp.PVPCurrentPoints += points;
+	m_pp.PVPCareerPoints += points;
+	m_pp.PVPKills += 1;
+	m_pp.PVPCurrentKillStreak += 1;
+	m_pp.PVPCurrentDeathStreak = 0;
+	m_pp.PVPInfamy += infamy_gained;
+	if (m_pp.PVPCurrentKillStreak > m_pp.PVPBestKillStreak)
+		m_pp.PVPBestKillStreak = m_pp.PVPCurrentKillStreak;
+	strcpy(m_pp.PVPLastKill.Name, victim_name);
+	m_pp.PVPLastKill.Level = victim_level;
+	m_pp.PVPLastKill.Race = victim_race;
+	m_pp.PVPLastKill.Class = victim_class;
+	m_pp.PVPLastKill.Zone = victim_zone_id;
+	m_pp.PVPLastKill.Time = time(nullptr);
+	m_pp.PVPLastKill.Points = points;
+
+	SendPVPStats();
+}
+
+
+bool Client::GetCanPoints()
+{
+	auto now = std::chrono::high_resolution_clock::now();
+
+	if(static_cast<uint32>(std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count()) - m_pp.pvp2 >= RuleI(PVP, PointsTimer))
+		return true;
+
+	return false;
+}
+
+void Client::SetPointTime()
+{
+		auto now = std::chrono::high_resolution_clock::now();
+		m_pp.pvp2 = static_cast<uint32>(std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count());
+		//LogCombat("Client::SetPointTime(): Epoch in s: [{}]", m_pp.pvp2);
+}
+
+bool Client::IsCharacterNaked()
+{
+	// Check Inventory for items and gear
+	EQ::ItemInstance* item = nullptr;
+	for (int slot_index = EQ::invslot::POSSESSIONS_BEGIN; slot_index < EQ::invslot::POSSESSIONS_END; ++slot_index)
+	{
+		item = GetInv().GetItem(slot_index);
+		if (item)
+		{
+			return false;
+		}
+	}
+
+	// Check for money
+	if (GetPlatinum() > 0 || GetGold() > 0 || GetSilver() > 0 || GetCopper() > 0)
+		return false;
+
+	return true;
+}
+
+void Client::ProcessPVPDeath(Mob* killer, uint16 spell)
+{
+	// TODO: Refactor this to be out of this function
+	if (killer->IsNPC()) {
+		parse->EventNPC(EVENT_SLAY, killer->CastToNPC(), this, "", 0);
+
+		uint16 emoteid = killer->GetEmoteID();
+		if (emoteid != 0)
+			killer->CastToNPC()->DoNPCEmote(EQ::constants::EmoteEventTypes::KilledPC, emoteid);
+		//killer->TrySpellOnKill(GetLevel(), spell);
+	}
+
+	if (killer->IsClient() && (IsDueling() || killer->CastToClient()->IsDueling()))
+	{
+		SetMana(RuleI(PVP, RespawnManaPercent));
+		SetDueling(false);
+		SetDuelTarget(0);
+		if (killer->IsClient() && killer->CastToClient()->IsDueling() && killer->CastToClient()->GetDuelTarget() == GetID())
+		{
+			//if duel opponent killed us...
+			killer->CastToClient()->SetDueling(false);
+			killer->CastToClient()->SetDuelTarget(0);
+			entity_list.DuelMessage(killer, this, false);
+
+		}
+		else {
+			//otherwise, we just died, end the duel.
+			Mob* who = entity_list.GetMob(GetDuelTarget());
+			if (who && who->IsClient()) {
+				who->CastToClient()->SetDueling(false);
+				who->CastToClient()->SetDuelTarget(0);
+			}
+		}
+	}
+
+	Group* group = entity_list.GetGroupByClient(killer->CastToClient());
+	Client* victim = this;
+	bool shares_group = group != 0 && group->IsGroupMember(victim);
+	bool shares_guild = killer->CastToClient()->GuildID() != GUILD_NONE && victim->GuildID() != GUILD_NONE && killer->CastToClient()->GuildID() == victim->GuildID();
+	int accountcount = 0;
+
+	if (group != 0)
+	{
+		std::vector<int> account_list;
+		for (int i = 0; i < 6; i++)
+		{
+			if (group->members[i] != nullptr)
+			{
+				account_list.push_back(group->members[i]->CastToClient()->AccountID());
+			}
+		}
+
+		accountcount = database.SharedAccountCount(account_list, victim->AccountID());
+	} 
+	else {
+		accountcount = database.SharedAccountCount(killer->CastToClient()->AccountID(), victim->AccountID());
+	}
+
+	// Check for PVP Kill
+	if (((killer->IsClient() && killer != victim) || (killer->IsPet() && killer->GetOwner()->IsClient())) && !shares_group && !shares_guild)
+	{
+		bool worth_points = false;
+		uint32 total_infamy_stolen = 0;
+		uint8 num_players_rewarded = 0;
+
+		SetMana(RuleI(PVP, RespawnManaPercent));
+
+		// If Pet gets kill give credit to owner
+		if (killer->IsPet() && killer->GetOwner()->IsClient())
+			killer = killer->GetOwner();
+
+		// PVP Zone Lockout
+		//if (zone->GetLockout())
+		//	database.SetLockout(CharacterID(), zone->GetZoneID());
+
+		// Determine if victim can be killed for points/kills
+		if ((GetCanPoints() && Admin() <= AccountStatus::Guide) || killer->CastToClient()->Admin() >= AccountStatus::Guide)
+		{
+			if (accountcount == 0 || killer->CastToClient()->Admin() >= AccountStatus::Guide) // Allows Admins to bypass for testing purposes
+			{
+				total_infamy_stolen = GetInfamyStealAmount(victim);
+				uint32 last_death_points = 0;
+				worth_points = true;
+
+				if (killer->CastToClient()->isgrouped)
+				{
+					if (group != 0)
+					{
+						uint8 gcount = group->GroupCountInZone();
+						uint8 gcount_in_range = group->GroupCountInZoneInLevelRange(victim->GetLevel());
+						uint8 processed_count = 0;
+						uint32 infamy_per_killer = gcount_in_range > 0 ? static_cast<uint32>(floor(static_cast<float>(total_infamy_stolen) / static_cast<float>(gcount_in_range))) : 0;
+						uint32 overflow_infamy = gcount_in_range > 0 ? (total_infamy_stolen % gcount_in_range) : 0;
+						uint32 minimum_points_overflow_spent = 0;
+						std::string query_values_string = "";
+
+						for (int i = 0; i < 6; i++)
+						{
+							if (group->members[i] != nullptr)
+							{
+								uint32 pvp_points = 0;
+								uint32 infamy_gained = 0;
+
+								if (PVPLevelDifference(group->members[i]->CastToClient()))
+								{
+									infamy_gained = infamy_per_killer;
+
+									if (overflow_infamy > 0)
+									{
+										infamy_gained++;
+										overflow_infamy--;
+									}
+
+									pvp_points = CalculatePVPPoints(
+										group->members[i]->CastToClient()->GetLevel(),
+										group->members[i]->CastToClient()->m_pp.PVPInfamy,
+										victim->GetLevel(),
+										infamy_gained,
+										total_infamy_stolen,
+										gcount_in_range,
+										minimum_points_overflow_spent);
+									last_death_points += pvp_points;
+
+									group->members[i]->CastToClient()->Message(Chat::Yellow, "You have earned %d PvP Point(s) and %d PvP Infamy.", pvp_points, infamy_gained);
+								}
+								else {
+									group->members[i]->CastToClient()->Message(Chat::Yellow, "This player was out of your PvP level range and yielded no points or infamy.");
+								}
+
+								group->members[i]->CastToClient()->HandlePVPKill(
+									GetCleanName(),
+									GetLevel(),
+									GetRace(),
+									GetClass(),
+									GetZoneID(),
+									infamy_gained,
+									pvp_points);
+								query_values_string += database.GetPVPKillQueryStringValue(group->members[i]->CastToClient(), victim, pvp_points, infamy_gained);
+								num_players_rewarded++;
+
+								// Since group client lists can have nullptr at a given index and Client instances following it, use processed_count instead of i
+								if (processed_count < gcount - 1)
+									query_values_string += ", ";
+								processed_count++;
+							}
+						}
+						database.RegisterPVPKill(query_values_string);
+					}
+				}
+				else {
+					uint32 pvp_points = 0;
+					if (PVPLevelDifference(killer->CastToClient()))
+					{
+						pvp_points = CalculatePVPPoints(
+							killer->CastToClient()->GetLevel(),
+							killer->CastToClient()->m_pp.PVPInfamy,
+							victim->GetLevel(),
+							total_infamy_stolen,
+							total_infamy_stolen,
+							1);
+						last_death_points = pvp_points;
+						num_players_rewarded = 1;
+
+						killer->CastToClient()->Message(Chat::Yellow, "You have earned %d PvP Point(s) and %d PvP Infamy.", pvp_points, total_infamy_stolen);
+					}
+					else {
+						total_infamy_stolen = 0;
+						killer->CastToClient()->Message(Chat::Yellow, "This player was out of your PvP level range and yielded no points or infamy.");
+					}
+					killer->CastToClient()->HandlePVPKill(GetCleanName(), GetLevel(), GetRace(), GetClass(), GetZoneID(), total_infamy_stolen, pvp_points);
+					database.RegisterPVPKill(victim, killer->CastToClient(), pvp_points, total_infamy_stolen);
+				}
+
+				if (num_players_rewarded == 0)
+				{
+					total_infamy_stolen = 0;
+					worth_points = false;
+				}
+
+				this->HandlePVPDeath(killer->GetCleanName(), killer->GetLevel(), killer->GetRace(), killer->GetClass(), killer->GetZoneID(), total_infamy_stolen, last_death_points, IsCharacterNaked());
+			}
+			else {
+				killer->CastToClient()->Message(Chat::Yellow, "You may not earn PVP points or kills for killing characters on accounts you share.");
+			}
+		}
+		else {
+			killer->CastToClient()->Message(Chat::Yellow, "You may not earn PVP points for killing recently killed players.");
+		}
+
+	}
+}
+
+
+void Client::AddPVPPoints(uint32 Points)
+{
+	m_pp.PVPCurrentPoints += Points;
+	m_pp.PVPCareerPoints += Points;
+	SendPVPStats();
+}
+
+void Client::AddPVPInfamy(uint32 Infamy)
+{
+	m_pp.PVPInfamy += Infamy;
+	SendPVPStats();
+}
+
+void Client::SendPVPStats()
+{
+	
+	auto outapp = new EQApplicationPacket(OP_PVPStats, sizeof(PVPStats_Struct));
+	PVPStats_Struct *pvps = (PVPStats_Struct *)outapp->pBuffer;
+
+	pvps->Kills = m_pp.PVPKills;
+	pvps->Deaths = m_pp.PVPDeaths;
+	pvps->PVPPointsAvailable = m_pp.PVPCurrentPoints;
+	pvps->TotalPVPPoints = m_pp.PVPCareerPoints;
+	pvps->BestKillStreak = m_pp.PVPBestKillStreak;
+	pvps->WorstDeathStreak = m_pp.PVPWorstDeathStreak;
+	pvps->CurrentKillStreak = m_pp.PVPCurrentKillStreak;
+	pvps->Vitality = m_pp.PVPVitality;
+	pvps->Infamy = m_pp.PVPInfamy;
+	strcpy(pvps->LastKill.Name, m_pp.PVPLastKill.Name);
+	pvps->LastKill.Level = m_pp.PVPLastKill.Level;
+	pvps->LastKill.Race = m_pp.PVPLastKill.Race;
+	pvps->LastKill.Class = m_pp.PVPLastKill.Class;
+	pvps->LastKill.Zone = m_pp.PVPLastKill.Zone;
+	pvps->LastKill.Time = m_pp.PVPLastKill.Time;
+	pvps->LastKill.Points = m_pp.PVPLastKill.Points;
+	strcpy(pvps->LastDeath.Name, m_pp.PVPLastDeath.Name);
+	pvps->LastDeath.Level = m_pp.PVPLastDeath.Level;
+	pvps->LastDeath.Race = m_pp.PVPLastDeath.Race;
+	pvps->LastDeath.Class = m_pp.PVPLastDeath.Class;
+	pvps->LastDeath.Zone = m_pp.PVPLastDeath.Zone;
+	pvps->LastDeath.Time = m_pp.PVPLastDeath.Time;
+	pvps->LastDeath.Points = m_pp.PVPLastDeath.Points;
+
+
+	database.GetPVPKillsLast24Hours(this, pvps);
+
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}
+
+

@@ -1276,6 +1276,7 @@ bool Zone::LoadZoneCFG(const char* filename)
 	strcpy(newzone_data.zone_long_name, GetLongName());
 	strcpy(newzone_data.zone_short_name2, GetShortName());
 
+
 	LogInfo("Successfully loaded Zone Config.");
 	return true;
 }

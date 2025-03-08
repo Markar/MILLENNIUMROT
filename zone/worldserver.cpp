@@ -2123,6 +2123,18 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet& p)
 			}
 			break;
 		}
+
+		case ServerOP_HandlePVPKill:
+		{
+			HandlePVPKill_Struct* pvp = (HandlePVPKill_Struct*)pack->pBuffer;
+			Client* client = entity_list.GetClientByName(pvp->killer_name);
+			
+			if (client)
+			{
+				client->HandlePVPKill(pvp->victim_name, pvp->victim_level, pvp->victim_race, pvp->victim_class, pvp->victim_zone_id, pvp->infamy_stolen, pvp->points);
+			}
+			break;
+		}
 		
 		case ServerOP_QuakeEnded:
 		{

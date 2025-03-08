@@ -796,6 +796,28 @@ uint8 Group::GroupCount() {
 	return MemberCount;
 }
 
+uint8 Group::GroupCountInZone() {
+	uint8 membercount = 0;
+	for (uint8 i = 0; i < MAX_GROUP_MEMBERS; ++i) {
+		// Don't split with Mercs or Bots
+		if (members[i] != nullptr && members[i]->IsClient()) {
+			++membercount;
+		}
+	}
+	return membercount;
+}
+
+uint8 Group::GroupCountInZoneInLevelRange(uint8 level)
+{
+	uint8 membercount = 0;
+	for (uint8 i = 0; i < MAX_GROUP_MEMBERS; ++i) {
+		if (members[i] != nullptr && members[i]->IsClient() && abs(members[i]->GetLevel() - level) <= RuleI(PVP, LevelDifference)) {
+			++membercount;
+		}
+	}
+	return membercount;
+} 
+
 uint32 Group::GetHighestLevel()
 {
 	uint32 level = 1;

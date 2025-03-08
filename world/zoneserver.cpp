@@ -78,6 +78,7 @@ ZoneServer::ZoneServer(std::shared_ptr<EQ::Net::ServertalkServerConnection> in_c
 		}
 		});
 
+	m_pvpstats = new PVPStats;
 	console = in_console;
 }
 
@@ -707,6 +708,14 @@ void ZoneServer::HandleMessage(uint16 opcode, const EQ::Net::Packet& p) {
 
 		break;
 	}
+
+	case ServerOP_HandlePVPKill:
+	{
+		// send world repop packet to zones
+		zoneserver_list.SendPacket(pack);
+		break;
+	}
+
 	case ServerOP_SetConnectInfo: {
 		if (pack->size != sizeof(ServerConnectInfo)) {
 			break;
@@ -1110,6 +1119,15 @@ void ZoneServer::HandleMessage(uint16 opcode, const EQ::Net::Packet& p) {
 		QSLink.SendPacket(pack);
 		break;
 	}
+
+	case ServerOP_PVPStatData:
+	{
+		PVPStatData_Struct *sd = (PVPStatData_Struct*)pack->pBuffer;
+		PVPStatData_Struct data = PVPStatData_Struct(*sd);
+		m_pvpstats->AddData(data);
+		break;
+	}
+
 	case ServerOP_GetWorldTime: {
 		LogInfo("Broadcasting a world time update");
 		auto outpack = new ServerPacket;
@@ -1655,4 +1673,215 @@ void ZoneServer::IncomingClient(Client* client) {
 	s->version = client->GetClientVersionBit();
 	SendPacket(pack);
 	delete pack;
+}
+
+PVPStats::PVPStats()
+{
+	time(&m_processTimer);
+}
+
+PVPStats::~PVPStats()
+{
+
+}
+
+void PVPStats::Process()
+{
+	auto it = std::begin(m_data);
+
+	while (it != std::end(m_data))
+	{
+		auto it2 = std::begin(it->second);
+
+		while (it2 != std::end(it->second))
+		{
+			time_t raw_time;
+			time(&raw_time);
+			if (it2->Time < raw_time - 120) // make/use rule for this difference
+				it2 = it->second.erase(it2);
+			else	// found an entry that isn't expired, so assume all following entries come after and skip the rest of checks
+				break;
+			it2++;
+		}
+
+		// check empty
+		if (it->second.empty())
+		{
+			it = m_data.erase(it);
+		}
+		it++;
+	}
+}
+
+void PVPStats::GenerateKillData(std::string killer, std::string killee, std::string zonename)
+{
+	// used for rough global data on kill
+	// total hits and total damage
+	int total_hits = 0;
+	int total_damage = 0;
+	int total_dispels = 0;
+	int over_damage = 0;
+	int last_hit = 0;
+
+	// used for individual player statistics
+	std::map<std::string, StatCompile_Struct> player_stats;
+
+	auto it = m_data.find(killee);
+
+	if (it == std::end(m_data))
+	{
+		return;
+	}
+
+	auto it2 = std::begin(it->second);
+	while (it2 != std::end(it->second))
+	{
+		// Melee, Ranged, Throwing, or Special Attack
+		if (it2->Type >= 1 && it2->Type <= 4)
+		{
+			total_hits++;
+			total_damage += it2->Value;
+
+			auto it3 = player_stats.find(std::string(it2->Source));
+			if (it3 == std::end(player_stats))
+			{
+				// not found in map - create
+				StatCompile_Struct values;
+				values.MeleeHits = 1;
+				values.MeleeDamage = it2->Value;
+				values.SpellHits = 0;
+				values.SpellDamage = 0;
+				values.Dispels = 0;
+				std::pair<std::string, StatCompile_Struct> mypair(it2->Source, values);
+				player_stats.insert(mypair);
+			}
+			else
+			{
+				// found in map - update
+				(it3->second.MeleeHits)++;
+				it3->second.MeleeDamage += it2->Value;
+			}
+		}
+		// Spell Damage - direct or DoT etc
+		else if (it2->Type == STAT_SPELL_DIRECT)
+		{
+			total_hits++;
+			total_damage += it2->Value;
+
+			auto it3 = player_stats.find(std::string(it2->Source));
+			if (it3 == std::end(player_stats))
+			{
+				// not found in map - create
+				StatCompile_Struct values;
+				values.MeleeHits = 0;
+				values.MeleeDamage = 0;
+				values.SpellHits = 1;
+				values.SpellDamage = it2->Value;
+				values.Dispels = 0;
+				std::pair<std::string, StatCompile_Struct> mypair(it2->Source, values);
+				player_stats.insert(mypair);
+			}
+			else
+			{
+				// found in map - update
+				(it3->second.SpellHits)++;
+				it3->second.SpellDamage += it2->Value;
+			}
+		}
+		// Dispel count
+		else if (it2->Type == STAT_DISPEL)
+		{
+			total_dispels += it2->Value;
+
+			auto it3 = player_stats.find(std::string(it2->Source));
+			if (it3 == std::end(player_stats))
+			{
+				// not found in map - create
+				StatCompile_Struct values;
+				values.MeleeHits = 0;
+				values.MeleeDamage = 0;
+				values.SpellHits = 0;
+				values.SpellDamage = 0;
+				values.Dispels = it2->Value;
+				std::pair<std::string, StatCompile_Struct> mypair(it2->Source, values);
+				player_stats.insert(mypair);
+			}
+			else
+			{
+				// found in map - update
+				it3->second.Dispels += it2->Value;
+			}
+		}
+		else if (it2->Type == STAT_OVERKILL_DAMAGE)
+		{
+			over_damage = it2->Value;
+		}
+		else if (it2->Type == STAT_LAST_HIT)
+		{
+			last_hit = it2->Value;
+		}
+		it2++;
+	}
+
+	std::string myjson = StringFormat(R"({"killer":"%s","killee":"%s","total_hits":%d,"total_damage":%d,"last_hit":%d,"over_damage":%d,"total_dispels":%d,"zone":"%s",)", killer.c_str(), killee.c_str(), total_hits, total_damage, last_hit, over_damage, total_dispels, zonename.c_str());
+
+	auto it4 = std::begin(player_stats);
+	auto it4p1 = it4;
+	it4p1++;
+	int palcount = 0;
+
+	while (it4 != std::end(player_stats))
+	{
+		myjson += StringFormat(R"("pal%d":{"name":"%s","melee_hits":%d,"melee_damage":%d,"spell_hits":%d,"spell_damage":%d,"dispels":%d})", palcount, it4->first.c_str(), it4->second.MeleeHits, it4->second.MeleeDamage, it4->second.SpellHits, it4->second.SpellDamage, it4->second.Dispels);
+		if (it4p1 != std::end(player_stats))
+			myjson += ",";
+		palcount++;
+		it4++;
+		if (it4p1 != std::end(player_stats))
+			it4p1++;
+	}
+
+	myjson += StringFormat(R"(,"palcount":%d)", palcount);
+
+	myjson += "}";
+
+	database.InsertKillStats(myjson);
+}
+
+void PVPStats::AddData(PVPStatData_Struct data)
+{
+	std::string source(data.Source);
+	std::string target(data.Target);
+	auto it = m_data.find(target);
+
+	if (it == m_data.end())
+	{
+		// no entry found - create it
+		std::list<PVPStatData_Struct> mylist;
+		mylist.push_back(data);
+		m_data.insert(std::pair<std::string, std::list<PVPStatData_Struct> >(target, mylist));
+		it = m_data.find(target);
+	}
+	else
+	{
+		// entry found - add to it
+		it->second.push_back(data);
+	}
+
+	// kill type - process the data
+	if (data.Type == STAT_KILL)
+	{
+		GenerateKillData(source, target, std::string(data.Zone));
+		it->second.clear();
+		m_data.erase(it);
+	}
+
+	time_t current_time;
+	time(&current_time);
+
+	if (m_processTimer < current_time - 10)
+	{
+		m_processTimer = current_time;
+		Process();
+	}
 }

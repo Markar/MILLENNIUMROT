@@ -390,6 +390,7 @@ luabind::scope lua_register_packet_opcodes() {
 			luabind::value("AutoAttack2", static_cast<int>(OP_AutoAttack2)),
 			luabind::value("TargetMouse", static_cast<int>(OP_TargetMouse)),
 			luabind::value("TargetCommand", static_cast<int>(OP_TargetCommand)),
+			luabind::value("PVPStats", static_cast<int>(OP_PVPStats)),
 			luabind::value("Hide", static_cast<int>(OP_Hide)),
 			luabind::value("Forage", static_cast<int>(OP_Forage)),
 			luabind::value("Fishing", static_cast<int>(OP_Fishing)),
