@@ -467,10 +467,10 @@ void handle_player_aa_buy(
 ) {
 	Seperator sep(data.c_str());
 	lua_pushinteger(L, Strings::ToInt(sep.arg[0]));
-	lua_setfield(L, -2, "aa_name");
+	lua_setfield(L, -2, "aa_id");
 
 	lua_pushinteger(L, Strings::ToInt(sep.arg[1]));
-	lua_setfield(L, -2, "aa_id");
+	lua_setfield(L, -2, "aa_cost");
 }
 
 void handle_player_timer(
