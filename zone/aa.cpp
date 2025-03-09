@@ -881,7 +881,7 @@ void Client::BuyAA(AA_Action* action)
 		if (parse->PlayerHasQuestSub(EVENT_AA_BUY)) {
 			const auto& export_string = fmt::format(
 				"{} {}",
-				real_cost,
+				aa2->name,
 				aa2->id
 			);
 	

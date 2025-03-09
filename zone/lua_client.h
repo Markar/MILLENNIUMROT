@@ -45,7 +45,7 @@ public:
 	void SetPVP(bool v);
 	bool GetPVP();
 	uint32 GetPVPPoints();
-	uint32 SetPVPPoints(uint32 points);
+	void SetPVPPoints(uint32 Points);
 	bool GetGM();
 	void SetBaseClass(int v);
 	void SetBaseRace(int v);

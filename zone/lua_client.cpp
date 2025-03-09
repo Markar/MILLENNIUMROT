@@ -95,9 +95,10 @@ uint32 Lua_Client::GetPVPPoints() {
 	return self->GetPVPPoints();
 }
 
-uint32 Lua_Client::SetPVPPoints(uint32 points) {
-	Lua_Safe_Call_Int();
-	self->SetPVPPoints(points);
+void Lua_Client::SetPVPPoints(uint32 Points) {
+	Lua_Safe_Call_Void();
+	self->Message(15,"You now have %i PvP Points", Points);
+	self->SetPVPPoints(Points);
 }
 
 bool Lua_Client::GetGM() {
@@ -1432,7 +1433,7 @@ luabind::scope lua_register_client() {
 		.def("SetPVP", (void(Lua_Client::*)(bool))&Lua_Client::SetPVP)
 		.def("GetPVP", (bool(Lua_Client::*)(void))&Lua_Client::GetPVP)
 		.def("GetPVPPoints", (uint32(Lua_Client::*)(void))&Lua_Client::GetPVPPoints)
-		.def("SetPVPPoints", (uint32(Lua_Client::*)(void))&Lua_Client::SetPVPPoints)
+		.def("SetPVPPoints", (void(Lua_Client::*)(uint32))&Lua_Client::SetPVPPoints)
 		.def("GetGM", (bool(Lua_Client::*)(void))&Lua_Client::GetGM)
 		.def("SetBaseClass", (void(Lua_Client::*)(int))&Lua_Client::SetBaseClass)
 		.def("SetBaseRace", (void(Lua_Client::*)(int))&Lua_Client::SetBaseRace)

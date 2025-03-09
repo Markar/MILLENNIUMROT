@@ -306,7 +306,7 @@ public:
 	int WorldPVPMinLevel();
  	int GetAlignment();
 	int GetPVPRaceTeamBySize();
-	void SetPVPPoints(uint32 Points) { m_pp.PVPCurrentPoints = Points; }
+	void SetPVPPoints(uint32 Points);
 	void GivePVPPoints(uint32 Points) { m_pp.PVPCurrentPoints += Points; }
 	void SetPVPInfamy(uint32 Infamy) { m_pp.PVPInfamy = Infamy; }
 	uint32 GetPVPPoints() { return m_pp.PVPCurrentPoints; }

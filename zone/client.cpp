@@ -8479,6 +8479,12 @@ void Client::AddPVPPoints(uint32 Points)
 	SendPVPStats();
 }
 
+void Client::SetPVPPoints(uint32 Points)
+{
+	m_pp.PVPCurrentPoints = Points;
+	SendPVPStats();
+}
+
 void Client::AddPVPInfamy(uint32 Infamy)
 {
 	m_pp.PVPInfamy += Infamy;
