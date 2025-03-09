@@ -457,6 +457,22 @@ void handle_player_death(
 	lua_setfield(L, -2, "skill");
 }
 
+void handle_player_aa_buy(
+	QuestInterface *parse,
+	lua_State* L,
+	Client* client,
+	std::string data,
+	uint32 extra_data,
+	std::vector<std::any> *extra_pointers
+) {
+	Seperator sep(data.c_str());
+	lua_pushinteger(L, Strings::ToInt(sep.arg[0]));
+	lua_setfield(L, -2, "aa_cost");
+
+	lua_pushinteger(L, Strings::ToInt(sep.arg[1]));
+	lua_setfield(L, -2, "aa_id");
+}
+
 void handle_player_timer(
 	QuestInterface* parse,
 	lua_State* L,

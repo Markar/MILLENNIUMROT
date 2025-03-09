@@ -62,6 +62,7 @@ const char *LuaEvents[_LargestEventID] = {
 	"event_level_up",
 	"event_killed_merit",
 	"event_cast_on",
+	"event_aa_buy",
 	"event_aggro_say",
 	"event_player_pickup",
 	"event_environmental_damage",
@@ -192,6 +193,7 @@ LuaParser::LuaParser() {
 	PlayerArgumentDispatch[EVENT_BOARD_BOAT] = handle_board_boat;
 	PlayerArgumentDispatch[EVENT_LEAVE_BOAT] = handle_leave_boat;
 	PlayerArgumentDispatch[EVENT_CLICK_MERCHANT] = handle_click_merchant;
+	PlayerArgumentDispatch[EVENT_AA_BUY] = handle_player_aa_buy;
 
 	ItemArgumentDispatch[EVENT_ITEM_CLICK] = handle_item_click;
 	ItemArgumentDispatch[EVENT_ITEM_CLICK_CAST] = handle_item_click;

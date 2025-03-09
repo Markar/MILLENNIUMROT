@@ -7,7 +7,7 @@ void command_leaderboard(Client *c, const Seperator *sep)
 		return;
 	}
 
-	std::string query = "SELECT level, class, name, race, pvp_kills, infamy FROM character_data WHERE ";
+	std::string query = "SELECT level, class, name, race, pvp_kills, pvp_infamy FROM character_data WHERE ";
 
 	if(strncasecmp(sep->arg[1], "kills", 5) == 0)
 	{
@@ -15,7 +15,7 @@ void command_leaderboard(Client *c, const Seperator *sep)
 	}
 	else if(strncasecmp(sep->arg[1], "infamy", 6) == 0)
 	{
-		query += "infamy > 0";
+		query += "pvp_infamy > 0";
 	}
 	else
 	{

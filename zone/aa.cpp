@@ -35,6 +35,7 @@ Copyright (C) 2001-2004 EQEMu Development Team (http://eqemulator.net)
 #include "string_ids.h"
 #include "titles.h"
 #include "zonedb.h"
+#include "quest_parser_collection.h"
 
 extern QueryServ* QServ;
 
@@ -876,6 +877,16 @@ void Client::BuyAA(AA_Action* action)
 		}
 
 		SendAAStats();
+
+		if (parse->PlayerHasQuestSub(EVENT_AA_BUY)) {
+			const auto& export_string = fmt::format(
+				"{} {}",
+				real_cost,
+				aa2->id
+			);
+	
+			parse->EventPlayer(EVENT_AA_BUY, this, export_string, 0);
+		}
 
 		CalcBonuses();
 
