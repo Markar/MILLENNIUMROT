@@ -1371,6 +1371,7 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 				killedby = Killed_PVP;
 				std::string pvpKilledGuildName = GetGuildName();
 				std::string pvpKillerGuildName = killerMob->CastToClient()->GetGuildName();
+				ProcessPVPDeath(killerMob, spell);
 				worldserver.SendEmoteMessage(0, 0, 15, "[PVP] %s of <%s> has been killed in combat by %s of <%s>!", GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str(), killerMob->GetCleanName(), pvpKillerGuildName.empty() ? " " : pvpKillerGuildName.c_str());
 			}
 			else

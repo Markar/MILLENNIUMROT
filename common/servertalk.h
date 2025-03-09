@@ -220,12 +220,12 @@
 #define ServerOP_QSPlayerLootRecords				0x5024
 
 /*PvP*/
-#define ServerOP_PVPStatData 0x6010
-#define ServerOP_HandlePVPKill 0x6011
+#define ServerOP_PVPStatData 0x4200
+#define ServerOP_HandlePVPKill 0x4201
 
 /*Quarm*/
-#define ServerOP_QuakeImminent 0x4200
-#define ServerOP_QuakeRequest 0x4201
+#define ServerOP_QuakeImminent 0x6010
+#define ServerOP_QuakeRequest 0x6011
 #define ServerOP_QuakeEnded 0x4202
 #define ServerOP_ReloadSpellModifiers	0x4203
 #define ServerOP_ReloadRulesWorld 0x4204

@@ -8339,6 +8339,7 @@ void Client::ProcessPVPDeath(Mob* killer, uint16 spell)
 	// Check for PVP Kill
 	if (((killer->IsClient() && killer != victim) || (killer->IsPet() && killer->GetOwner()->IsClient())) && !shares_group && !shares_guild)
 	{
+
 		bool worth_points = false;
 		uint32 total_infamy_stolen = 0;
 		uint8 num_players_rewarded = 0;
