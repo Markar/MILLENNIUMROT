@@ -290,6 +290,7 @@ void Lua_Client::SetEXP(uint32 set_exp, uint32 set_aaxp) {
 		}
 	}
 	self->SetEXP(set_exp, set_aaxp);
+	self->SendAAStats(); //Update AA Window
 }
 
 void Lua_Client::SetEXP(uint32 set_exp, uint32 set_aaxp, bool resexp) {
