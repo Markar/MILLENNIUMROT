@@ -1036,7 +1036,8 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 				snprintf(effect_desc, _EDLEN, "Summon Item: %s (id %d)", itemname, spell.base[i]);
 #endif
 				if (!item) {
-					Message(Chat::Red, "Unable to summon item %d. Item not found.", spell.base[i]);
+					//Message(Chat::Red, "Unable to summon item %d. Item not found.", spell.base[i]);
+					printf("Unable to summon item %d. Item not found.\n", spell.base[i]);
 				} else if (IsClient()) {
 					Client *c = CastToClient();
 					if (c->CheckLoreConflict(item)) {

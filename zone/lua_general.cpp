@@ -1089,6 +1089,12 @@ void lua_attack(const char *client_name) {
 	quest_manager.attack(client_name);
 }
 
+
+void lua_self_cast(uint16 spell_id)
+{
+	quest_manager.selfcast(spell_id);
+}
+
 void lua_attack_npc(int entity_id) {
 	quest_manager.attacknpc(entity_id);
 }
@@ -1453,6 +1459,7 @@ luabind::scope lua_register_general() {
 		luabind::def("register_spell_event", (void(*)(int, int, luabind::adl::object func))&register_spell_event),
 		luabind::def("unregister_spell_event", (void(*)(std::string, int, int))&unregister_spell_event),
 		luabind::def("unregister_spell_event", (void(*)(int, int))&unregister_spell_event),
+		luabind::def("self_cast", &lua_self_cast),
 		luabind::def("spawn2", (Lua_Mob(*)(int,int,int,double,double,double,double))&lua_spawn2),
 		luabind::def("spawn2", (Lua_Mob(*)(int, int, int, double, double, double, double,const char*))&lua_spawn2),
 		luabind::def("unique_spawn", (Lua_Mob(*)(int,int,int,double,double,double))&lua_unique_spawn),
