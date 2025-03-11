@@ -81,14 +81,14 @@ int main(int argc, char **argv) {
 void ExportSpells(SharedDatabase *db) {
 	Log(Logs::General, Logs::Status, "Exporting Spells...");
 
-	std::string file = fmt::format("{}/export/spells_us.txt", path.GetServerPath());
+	std::string file = fmt::format("{}/export/spells_en.txt", path.GetServerPath());
 	FILE *f = fopen(file.c_str(), "w");
 	if(!f) {
-		Log(Logs::General, Logs::Error, "Unable to open export/spells_us.txt to write, skipping.");
+		Log(Logs::General, Logs::Error, "Unable to open export/spells_en.txt to write, skipping.");
 		return;
 	}
 
-	const std::string query = "SELECT * FROM spells_new ORDER BY id";
+	const std::string query = "SELECT * FROM spells_en ORDER BY id";
 	auto results = db->QueryDatabase(query);
 
 	if(results.Success()) {
