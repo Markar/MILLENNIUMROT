@@ -1603,7 +1603,14 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 
 	if (!IsLD() && zonesummon_id == 0)
 	{
+		if (RuleI(PVP, ShadowrestZoneID) > 0 && ((killerMob && killerMob->IsClient() && killerMob != this)))
+		{
+			GoToShadowrest();
+		}
+		else 
+		{
 		GoToDeath();
+		}
 	}
 
 	/* QS: PlayerLogDeaths */

@@ -74,6 +74,9 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 				break;
 			case GateToBindPoint:
 			case ZoneToBindPoint:
+			case ZoneToShadowrest:
+				target_zone_id = RuleI(PVP, ShadowrestZoneID);
+				break;
 			case ForceZoneToBindPoint:
 				target_zone_id = m_pp.binds[0].zoneId;
 				break;
@@ -223,6 +226,12 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 		dest_h = m_pp.binds[0].heading;
 		ignorerestrictions = 1;	//can always get to our bind point? seems exploitable
 		break;
+	case ZoneToShadowrest:
+		dest_x = RuleR(PVP, ShadowrestZoneX);
+		dest_y = RuleR(PVP, ShadowrestZoneY);
+		dest_z = RuleR(PVP, ShadowrestZoneZ);
+		dest_h = RuleR(PVP, ShadowrestZoneHeading);
+		break;	
 	case ZoneSolicited: //we told the client to zone somewhere, so we know where they are going.
 		//recycle zonesummon variables
 		dest_x = m_ZoneSummonLocation.x;
@@ -603,6 +612,7 @@ void Client::ProcessMovePC(uint32 zoneID, uint32 zoneGuildID, float x, float y, 
 		case GMSummon:
 			ZonePC(zoneID, zoneGuildID, x, y, z, heading, ignorerestrictions, zm);
 			break;
+		case ZoneToShadowrest:
 		case ZoneToBindPoint:
 			ZonePC(zoneID, zoneGuildID, x, y, z, heading, ignorerestrictions, zm);
 			break;
@@ -672,6 +682,7 @@ void Client::ZonePC(uint32 zoneID, uint32 zoneGuildID, float x, float y, float z
 			zonesummon_guildid = zoneGuildID;
 			zonesummon_ignorerestrictions = 1;
 			break;
+		case ZoneToShadowrest:
 		case ZoneSolicited:
 			m_ZoneSummonLocation = glm::vec4(x,y,z,heading);
 			zonesummon_id = zoneID;
@@ -804,6 +815,36 @@ void Client::ZonePC(uint32 zoneID, uint32 zoneGuildID, float x, float y, float z
 			outapp->priority = 6;
 			FastQueuePacket(&outapp);
 		}
+		else if (zm == ZoneToShadowrest) {
+			Log(Logs::Detail, Logs::EQMac, "Zoning packet about to be sent (ZTB). We are headed to zone: %i, at %f, %f, %f", zoneID, x, y, z);
+			auto outapp = new EQApplicationPacket(OP_GMGoto, sizeof(GMGoto_Struct));
+			GMGoto_Struct* gmg = (GMGoto_Struct*) outapp->pBuffer;
+			uint32 clientpresumedzoneid = database.GetClientZoneID(zoneID);
+			zonesummon_id = zoneID;
+			zonesummon_guildid = zoneGuildID;
+			if (zone->GetZoneID() != zoneID && clientpresumedzoneid == database.GetClientZoneID(zone->GetZoneID()))
+			{
+				clientpresumedzoneid = 184;
+			}
+
+			//Second hack: guild level instances
+			if (zone->GetZoneID() == zoneID && zone->GetGuildID() != zoneGuildID)
+			{
+				clientpresumedzoneid = 184;
+			}
+
+			if (clientpresumedzoneid == 184)
+				clientpresumedzoneid = 185;
+			gmg->zoneID = clientpresumedzoneid;
+			strcpy(gmg->charname,this->name);
+			strcpy(gmg->gmname,this->name);
+			gmg->x = x;
+			gmg->y = y;
+			gmg->z = z;
+			outapp->priority = 6;
+			FastQueuePacket(&outapp);
+		}
+
 		else if (zm == GateToBindPoint) {			
 
 			// we hide the real zoneid we want to evac/succor to here
@@ -1062,6 +1103,11 @@ void Client::GoToDeath() {
 
 	MovePCGuildID(m_pp.binds[0].zoneId, GUILD_NONE, 0.0f, 0.0f, 0.0f, 0.0f, 1, ZoneToBindPoint);
 
+}
+
+void Client::GoToShadowrest() {
+	zone_mode = ZoneToShadowrest;
+	MovePCGuildID(RuleI(PVP, ShadowrestZoneID), GUILD_NONE, RuleR(PVP, ShadowrestZoneX), RuleR(PVP, ShadowrestZoneY), RuleR(PVP, ShadowrestZoneZ), RuleR(PVP, ShadowrestZoneHeading), 1, ZoneToShadowrest);
 }
 
 void Client::ForceGoToDeath() {

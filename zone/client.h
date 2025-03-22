@@ -206,7 +206,8 @@ typedef enum {
 	Rewind, // Summon to /rewind location.
 	EvacToSafeCoords,
 	ForceZoneToBindPoint,
-	ZoneToGuildZone
+	ZoneToGuildZone,
+	ZoneToShadowrest
 } ZoneMode;
 
 typedef enum {
@@ -747,6 +748,7 @@ public:
 	void SacrificeConfirm(Mob* caster);
 	void Sacrifice(Mob* caster);
 	void GoToDeath();
+	void GoToShadowrest();
 	void ForceGoToDeath();
 	void SetZoning(bool in) { zoning = in; }
 
