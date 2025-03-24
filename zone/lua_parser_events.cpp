@@ -583,21 +583,13 @@ void handle_player_cast(
 	uint32 extra_data,
 	std::vector<std::any>* extra_pointers
 ) {
-	//int spell_id = Strings::ToInt(data);
-	//if(IsValidSpell(spell_id)) {
-	//	Lua_Spell l_spell(&spells[spell_id]);
-	//	luabind::adl::object l_spell_o = luabind::adl::object(L, l_spell);
-	//	l_spell_o.push(L);
-	//} else {
-	//	Lua_Spell l_spell(nullptr);
-	//	luabind::adl::object l_spell_o = luabind::adl::object(L, l_spell);
-	//	l_spell_o.push(L);
-	//}
+	Seperator sep(data.c_str());
 
-	//lua_setfield(L, -2, "spell");
-
-	lua_pushinteger(L, Strings::ToInt(data));
+	lua_pushinteger(L, Strings::ToUnsignedInt(sep.arg[0]));
 	lua_setfield(L, -2, "spell");
+	uint32 target_level = (sep.arg[1] && *sep.arg[1] != '\0') ? Strings::ToUnsignedInt(sep.arg[1]) : 1;
+	lua_pushinteger(L, target_level);
+	lua_setfield(L, -2, "target_level");
 }
 
 void handle_player_zone(

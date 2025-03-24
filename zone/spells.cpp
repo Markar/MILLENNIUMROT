@@ -373,19 +373,37 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 		}
 	}
 
-	std::string export_string = fmt::format("{}", spell_id);
-	if(IsClient()) {
-		if (parse->EventPlayer(EVENT_CAST_BEGIN, CastToClient(), export_string, 0) != 0) {
-			return false;
-		}
-	} else if(IsNPC()) {
-		parse->EventNPC(EVENT_CAST_BEGIN, CastToNPC(), nullptr, export_string, 0);
-	}
+	Mob *spell_target_id = entity_list.GetMob(target_id);
 
-	//To prevent NPC ghosting when spells are cast from scripts
-	if (IsNPC() && IsMoving() && cast_time > 0) {
-		StopNavigation();
+	if (spell_target_id == nullptr) {
+		int targetLevel = 1;
+		std::string export_string = fmt::format("{} {}", spell_id, targetLevel);
+		if(IsClient()) {
+			if (parse->EventPlayer(EVENT_CAST_BEGIN, CastToClient(), export_string, 0) != 0) {
+				return false;
+			}
+		} else if(IsNPC()) {
+			parse->EventNPC(EVENT_CAST_BEGIN, CastToNPC(), nullptr, export_string, 0);
+		}
 	}
+	else
+	{
+		int targetLevel = spell_target_id->GetLevel();
+		std::string export_string = fmt::format("{} {}", spell_id, targetLevel);
+		if(IsClient()) {
+			if (parse->EventPlayer(EVENT_CAST_BEGIN, CastToClient(), export_string, 0) != 0) {
+				return false;
+			}
+		} else if(IsNPC()) {
+			parse->EventNPC(EVENT_CAST_BEGIN, CastToNPC(), nullptr, export_string, 0);
+		}
+	}
+	
+
+		//To prevent NPC ghosting when spells are cast from scripts
+		if (IsNPC() && IsMoving() && cast_time > 0) {
+			StopNavigation();
+		}
 
 	if(resist_adjust)
 	{
@@ -1418,13 +1436,27 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 	// at this point the spell has successfully been cast
 	//
 
-	std::string export_string = fmt::format("{}", spell_id);
-	if(IsClient()) {
-		parse->EventPlayer(EVENT_CAST, CastToClient(), export_string, 0);
-	} else if(IsNPC()) {
-		parse->EventNPC(EVENT_CAST, CastToNPC(), nullptr, export_string, 0);
-	}
+	Mob *spell_target_id = entity_list.GetMob(target_id);
 
+	if (spell_target_id == nullptr) {
+		int targetLevel = 1;
+		std::string export_string = fmt::format("{} {}", spell_id, targetLevel);
+		if(IsClient()) {
+			parse->EventPlayer(EVENT_CAST, CastToClient(), export_string, 0);
+		} else if(IsNPC()) {
+			parse->EventNPC(EVENT_CAST, CastToNPC(), nullptr, export_string, 0);
+		}
+	}
+	else {
+		int targetLevel = spell_target_id->GetLevel();
+		std::string export_string = fmt::format("{} {}", spell_id, targetLevel);
+		if(IsClient()) {
+			parse->EventPlayer(EVENT_CAST, CastToClient(), export_string, 0);
+		} else if(IsNPC()) {
+			parse->EventNPC(EVENT_CAST, CastToNPC(), nullptr, export_string, 0);
+		}
+	}
+	
 	if(IsClient())
 	{
 		Client *c = CastToClient();
@@ -2863,12 +2895,29 @@ bool Mob::SpellOnTarget(uint16 spell_id, Mob* spelltar, bool reflect, bool use_r
 	}
 
 	/* Send the EVENT_CAST_ON event */
-	std::string export_string = fmt::format("{}", spell_id);
-	if(spelltar->IsNPC()) {
-		parse->EventNPC(EVENT_CAST_ON, spelltar->CastToNPC(), this, export_string, 0);
+	Mob *spell_target_id = entity_list.GetMob(spelltar->GetID());
+	if (spell_target_id == nullptr) {
+		int targetLevel = 1;
+		std::string export_string = fmt::format("{} {}", spell_id, targetLevel);
+
+		if(spelltar->IsNPC()) {
+			parse->EventNPC(EVENT_CAST_ON, spelltar->CastToNPC(), this, export_string, 0);
+		}
+		else if (spelltar->IsClient()) {
+			parse->EventPlayer(EVENT_CAST_ON, spelltar->CastToClient(), export_string, 0);
+		}
 	}
-	else if (spelltar->IsClient()) {
-		parse->EventPlayer(EVENT_CAST_ON, spelltar->CastToClient(), export_string, 0);
+	else 
+	{
+		int targetLevel = spell_target_id->GetLevel();
+		std::string export_string = fmt::format("{} {}", spell_id, targetLevel);
+
+		if(spelltar->IsNPC()) {
+			parse->EventNPC(EVENT_CAST_ON, spelltar->CastToNPC(), this, export_string, 0);
+		}
+		else if (spelltar->IsClient()) {
+			parse->EventPlayer(EVENT_CAST_ON, spelltar->CastToClient(), export_string, 0);
+		}
 	}
 
 	// Casting on an entity in a different region silently fails after letting the spell be cast
