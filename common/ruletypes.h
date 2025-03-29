@@ -73,6 +73,7 @@ RULE_BOOL(Character, ForageNeedFoodorDrink, false, "")
 RULE_BOOL (Character, DisableAAs, false, "Disables server side AA support, since the client allows some AA activity through even with a pre-Luclin expansion set.")
 RULE_BOOL ( Character, SacrificeCorpseDepop, false, "If true, Sacrificed corpses will depop 3 minutes after they become empty in Pok, Nexus, or Bazaar")
 RULE_INT ( Character, DefaultExpansions, 15, "When a new account is created, this is the default bitmask expansions it is given. 1 Kunark 2 Velious 4 Luclin 8 PoP.")
+RULE_BOOL (Character, PVPCanLootCoin, false, "Can players loot coin from player corpses?")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY( Guild )
@@ -387,6 +388,10 @@ RULE_INT(Quarm, SpecialExpansionZoneIDBegin, 1500, "")
 RULE_INT(Quarm, SpecialExpansionZoneIDEnd, 5000, "")
 RULE_BOOL(Quarm, UseFixedShowHelmBehavior, true, "Fixes ShowHelm to be a personal toggle that works like other MMOs. Also adds full compatibility with Zeal's ShowHelm feature and Velious Helms support.")
 RULE_INT(Quarm, WarnDllVersionBelow, 1, "Sends a Client-out-of-date warning message to clients below this dll version.")
+RULE_CATEGORY_END()
+
+RULE_CATEGORY( RoT )
+RULE_BOOL ( RoT, EnableAAZones, true, "enables exp duplication as aaexp in specific zones, CB|BB < 15.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(SelfFound)

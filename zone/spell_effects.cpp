@@ -578,9 +578,16 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 				{
 					if (caster->IsClient())
 					{
-						// cap player stuns on NPCs at 7.5 seconds
-						if (effect_value > 7500 && IsNPC())
-							effect_value = 7500;
+						if (IsClient()) {
+							if (effect_value > 6000) // cap PvP stuns at 6 seconds
+								Log(Logs::Detail, Logs::Spells, "Spell ID: %i Stun duration %i longer than max stun duration %i", spell_id, effect_value, 6000);
+								effect_value = 6000;							
+						} else {
+							// cap player stuns on NPCs at 7.5 seconds
+							if (effect_value > 7500 && IsNPC()){
+								effect_value = 7500;							
+							}
+						}
 					}
 					Stun(effect_value, caster);
 				}
@@ -1453,6 +1460,12 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 				if(max_level == 0)
 					max_level = RuleI(Spells, BaseImmunityLevel); // Default max is 55 level limit
 
+				if (IsClient() && caster->IsClient()) { // cap PvP stuns at 6 seconds
+					if (effect_value > 6000) {
+						Log(Logs::Detail, Logs::Spells, "Spell ID: %i Stun duration %i longer than max stun duration %i", spell_id, effect_value, 6000);
+						effect_value = 6000;							
+					}
+				}
 				// NPCs ignore level limits in their spells
 				if(GetSpecialAbility(SpecialAbility::StunImmunity) ||
 					(GetLevel() > max_level && caster && caster->IsClient() && IsNPC()))

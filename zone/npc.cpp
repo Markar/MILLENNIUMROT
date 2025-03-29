@@ -132,7 +132,8 @@ NPC::NPC(const NPCType *npc_type_data, Spawn2* in_respawn, const glm::vec4& posi
 	m_SpawnPoint(position),
 	m_GuardPoint(-1.0f, -1.0f, -1.0f, 0.0f),
 	m_GuardPointSaved(0.0f, 0.0f, 0.0f, 0.0f),
-	npc_guild_id(0)
+	npc_guild_id(0),
+	npc_nonguild_hostile(true)
 {
 	//What is the point of this, since the names get mangled..
 	Mob* mob = entity_list.GetMob(name);
@@ -2430,19 +2431,22 @@ FACTION_VALUE NPC::GetReverseFactionCon(Mob* iOther, uint32 other_guild) {
 	iOther = iOther->GetOwnerOrSelf();
 	int primaryFaction= iOther->GetPrimaryFaction();
 
-	if(other_guild > 0 && (other_guild == iOther->CastToNPC()->GetNPCGuildID()))
-	{
-		return FACTION_ALLY;
-	}
-	else if (other_guild > 0 && iOther->CastToNPC()->GetNonGuildHostile())
-	{
-		if (iOther->CastToNPC()->IsGuard()) {
-			return FACTION_SCOWLS;
+	if (IsClient() && iOther->CastToNPC()->GetNPCGuildID() > 0) {
+		if(other_guild > 0 && (other_guild == iOther->CastToNPC()->GetNPCGuildID()))
+		{
+			return FACTION_ALLY;
 		}
-		else {
-			return FACTION_DUBIOUSLY;
+		else if (iOther->CastToNPC()->GetNonGuildHostile())
+		{
+			if (iOther->CastToNPC()->IsGuard()) {
+				return FACTION_SCOWLS;
+			}
+			else {
+				return FACTION_DUBIOUSLY;
+			}
 		}
 	}
+
 
 	//I am pretty sure that this special faction call is backwards
 	//and should be iOther->GetSpecialFactionCon(this)
@@ -2477,19 +2481,22 @@ FACTION_VALUE NPC::GetReverseFactionCon(Mob* iOther, bool ignore_feign_death, ui
 	iOther = iOther->GetOwnerOrSelf();
 	int primaryFaction= iOther->GetPrimaryFaction();
 
-	if(other_guild > 0 && (other_guild == iOther->CastToNPC()->GetNPCGuildID()))
-	{
-		return FACTION_ALLY;
-	}
-	else if (other_guild > 0 && iOther->CastToNPC()->GetNonGuildHostile())
-	{
-		if (iOther->CastToNPC()->IsGuard()) {
-			return FACTION_SCOWLS;
+	if (IsClient() && iOther->CastToNPC()->GetNPCGuildID() > 0) {
+		if(other_guild > 0 && (other_guild == iOther->CastToNPC()->GetNPCGuildID()))
+		{
+			return FACTION_ALLY;
 		}
-		else {
-			return FACTION_DUBIOUSLY;
-		}
+		else if (iOther->CastToNPC()->GetNonGuildHostile())
+		{
+			if (iOther->CastToNPC()->IsGuard()) {
+				return FACTION_SCOWLS;
+			}
+			else {
+				return FACTION_DUBIOUSLY;
+			}
+		}		
 	}
+
 
 	//I am pretty sure that this special faction call is backwards
 	//and should be iOther->GetSpecialFactionCon(this)

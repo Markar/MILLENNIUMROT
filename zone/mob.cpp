@@ -4064,6 +4064,8 @@ bool Mob::IsFacingMob(Mob *other)
 {
 	if (!other)
 		return false;
+	if (IsClient() && other && other->IsClient())
+		return true;
 	float angle = HeadingAngleToMob(other);
 	// what the client uses appears to be 2x our internal heading
 	float heading = GetHeading();

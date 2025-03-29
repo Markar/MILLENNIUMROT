@@ -665,6 +665,7 @@ void Client::CompleteConnect()
 	SendClientVersion();
 	FixClientXP();
 	SendToBoat(true);
+	entity_list.SendMyClientAppearance(this);
 	worldserver.RequestTellQueue(GetName());
 
 	if (GetBaseRace() == IKSAR && IsMule() && RuleB(Quarm, RestrictIksarsToKunark) && zone)
@@ -950,8 +951,10 @@ void Client::Handle_Connect_OP_SendExpZonein(const EQApplicationPacket *app)
 		if(GetPVP() != 1)
 			SetPVP(2);
 	}
-	if (GetPVP())	//force a PVP update until we fix the spawn struct
-		SendAppearancePacket(AppearanceType::PVP, GetPVP() > 0 ? 1 : 0, true, false);
+	//if (GetPVP())	//force a PVP update until we fix the spawn struct
+		//SendAppearancePacket(AppearanceType::PVP, GetPVP() > 0 ? 1 : 0, true, false);
+
+	entity_list.SendMyClientAppearance(this);
 
 	//Send AA Exp packet:
 	if (GetLevel() >= 51)

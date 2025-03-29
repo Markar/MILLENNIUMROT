@@ -444,6 +444,36 @@ void Client::AddEXP(uint32 in_add_exp, uint8 conlevel, Mob* killed_mob, int16 av
 		Log(Logs::Detail, Logs::EQMac, "Exp capped to 12.5 percent of level exp");
 	}
 
+	if (RuleB(RoT, EnableAAZones)) {
+		uint8 MaxAApts = 0;
+		switch (GetZoneID())
+		{
+		case Zones::CRUSHBONE:
+		case Zones::BLACKBURROW:
+			MaxAApts = 10;
+			break;
+		case Zones::MISTMOORE:
+		case Zones::UNREST:
+			MaxAApts = 25;
+			break;
+		case Zones::GUKBOTTOM:
+		case Zones::SOLDUNGB:
+			MaxAApts = 200;
+			break;
+		default:
+			break;
+		}
+		if (GetAAPoints() < MaxAApts) {
+			uint32 aaxp = RuleI(AA, ExpPerPoint) * (add_exp / requiredxp); //whatever % our exp gain was of our next level * by whats required to gain an AA
+			uint32 aaxp_cap = RuleI(AA, ExpPerPoint) / 8u;	// kill exp cap is 12.5%
+			if (aaxp > aaxp_cap) { //if aaexp gain is greater than 12.5%, set it to 12.5%
+				aaxp = aaxp_cap;
+			}
+			add_aaxp = aaxp;
+		}	
+	}
+
+
 	if (killed_mob->IsZomm())
 	{
 		// Zomm always results in 1 exp
@@ -857,6 +887,8 @@ void Client::SetLevel(uint8 set_level, bool command)
 	QueuePacket(outapp);
 	safe_delete(outapp);
 	this->SendAppearancePacket(AppearanceType::WhoLevel, set_level); // who level change
+	entity_list.SendMyClientAppearance(this); //update my name color (PvP Status)
+ 	entity_list.SendClientAppearances(this); //update other peoples name color (PvP Status)
 
 	Log(Logs::General, Logs::Normal, "Setting Level for %s to %i", GetName(), set_level);
 

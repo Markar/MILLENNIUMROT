@@ -4932,18 +4932,21 @@ FACTION_VALUE Client::GetReverseFactionCon(Mob* iOther) {
 
 // returns what Other thinks of this, ignore FD status
 FACTION_VALUE Client::GetReverseFactionCon(Mob* iOther, bool ignore_feign_death) {
-	if(GuildID() > 0 && (GuildID() == iOther->CastToNPC()->GetNPCGuildID()))
-	{
-		return FACTION_ALLY;
-	}
-	else if (GuildID() > 0 && iOther->CastToNPC()->GetNonGuildHostile()) //check if city is KoS to non-guildies
-	{
-		if (iOther->CastToNPC()->IsGuard()) {
-			return FACTION_SCOWLS;
-		} else {
-			return FACTION_DUBIOUSLY;
+	if (iOther->CastToNPC()->GetNPCGuildID() > 0) {
+		if(GuildID() > 0 && (GuildID() == iOther->CastToNPC()->GetNPCGuildID()))
+		{
+			return FACTION_ALLY;
 		}
+		else if (iOther->CastToNPC()->GetNonGuildHostile()) //check if city is KoS to non-guildies
+		{
+			if (iOther->CastToNPC()->IsGuard()) {
+				return FACTION_SCOWLS;
+			} else {
+				return FACTION_DUBIOUSLY;
+			}
+		}		
 	}
+
 
 	if (GetOwnerID()) {
 		return GetOwnerOrSelf()->GetReverseFactionCon(iOther);
@@ -4972,18 +4975,21 @@ FACTION_VALUE Client::GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 p_ra
 {
 	Log(Logs::General, Logs::Debug, "GetFactionLevel Called");
 
-	if (GuildID() > 0 && tnpc && (tnpc->CastToNPC()->GetNPCGuildID() == GuildID()))
-	{
-		return FACTION_ALLY;
-	}
-	else if (GuildID() > 0 && tnpc->CastToNPC()->GetNonGuildHostile()) //check if city is KoS to non-guildies
-	{
-		if (tnpc->CastToNPC()->IsGuard()) {
-			return FACTION_SCOWLS;
-		} else {
-			return FACTION_DUBIOUSLY;
+	if (tnpc->CastToNPC()->GetNPCGuildID() > 0) {
+		if (GuildID() > 0 && tnpc && (tnpc->CastToNPC()->GetNPCGuildID() == GuildID()))
+		{
+			return FACTION_ALLY;
 		}
+		else if (tnpc->CastToNPC()->GetNonGuildHostile()) //check if city is KoS to non-guildies
+		{
+			if (tnpc->CastToNPC()->IsGuard()) {
+				return FACTION_SCOWLS;
+			} else {
+				return FACTION_DUBIOUSLY;
+			}
+		}		
 	}
+
 
 	if (pFaction < 0)
 		return GetSpecialFactionCon(tnpc);

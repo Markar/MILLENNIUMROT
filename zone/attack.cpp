@@ -241,6 +241,10 @@ bool Mob::AvoidDamage(Mob* attacker, int32 &damage, bool isRangedAttack)
 	*/
 	Mob *defender = this;
 
+	if(defender && defender->IsClient() && defender->CastToClient()->IsSitting()) {
+		return false;
+	}
+
 	bool InFront = attacker->InFrontMob(this, attacker->GetX(), attacker->GetY());
 
 	// block
@@ -555,14 +559,14 @@ int Mob::CalcMeleeDamage(Mob* defender, int baseDamage, EQ::skills::SkillType sk
 		damage = 1;
 
 	if (IsClient())
-		CastToClient()->RollDamageMultiplier(offense, damage, skill);
+		CastToClient()->RollDamageMultiplier(defender, offense, damage, skill);
 
 	return damage;
 }
 
 // the output of this function is precise and is based on the code from:
 // https://forums.daybreakgames.com/eq/index.php?threads/progression-monks-we-have-work-to-do.229581/
-uint32 Client::RollDamageMultiplier(uint32 offense, int& damage, EQ::skills::SkillType skill)
+uint32 Client::RollDamageMultiplier(Mob* defender, uint32 offense, int& damage, EQ::skills::SkillType skill)
 {
 	int rollChance = 51;
 	int maxExtra = 210;
@@ -609,11 +613,16 @@ uint32 Client::RollDamageMultiplier(uint32 offense, int& damage, EQ::skills::Ski
 	if (baseBonus < 10)
 		baseBonus = 10;
 
-	if (zone->random.Roll(rollChance))
+	if (zone->random.Roll(rollChance) || (defender->IsClient() && defender->CastToClient()->IsSitting()))
 	{
 		uint32 roll;
 
 		roll = zone->random.Int(0, baseBonus) + 100;
+
+		if (defender->IsClient() && defender->CastToClient()->IsSitting()) { //if client is sitting do max damage multiplier
+			roll = baseBonus + 100;
+		}
+
 		if (roll > maxExtra)
 			roll = maxExtra;
 
@@ -987,7 +996,7 @@ bool Client::Attack(Mob* other, int hand, int damagePct)
 
 			damage = damageBonus + CalcMeleeDamage(other, baseDamage, skillinuse);
 
-			if (damagePct <= 0)
+			if (damagePct <= 0 || (other->IsClient() && other->CastToClient()->IsSitting()))
 				damagePct = 100;
 			damage = damage * damagePct / 100;
 
@@ -1501,6 +1510,24 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 			// creating the corpse takes the cash/items off the player too
 			auto new_corpse = new Corpse(this, exploss, killedby);
 
+			if (killerMob != nullptr && killerMob->IsClient() && RuleB(Character, PVPCanLootCoin)) {
+				if (killerMob->CastToClient()->isgrouped) {
+					Group* group = entity_list.GetGroupByClient(killerMob->CastToClient());
+					if (group != 0)
+					{
+						for (int i = 0; i < 6; i++)
+						{
+							if (group->members[i] != nullptr)
+							{
+								new_corpse->AllowPlayerLoot(group->members[i]);
+							}
+						}
+					}
+				}
+			} else {
+				new_corpse->AllowPlayerLoot(killerMob);
+			}
+
 			std::string tmp;
 			database.GetVariable("ServerType", tmp);
 			if(tmp[0] == '1' && tmp[1] == '\0' && killerMob != nullptr && killerMob->IsClient()){
@@ -1535,6 +1562,8 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 							}
 						}
 					}
+				} else {
+					new_corpse->AllowPlayerLoot(killerMob);
 				}
 			}
 
