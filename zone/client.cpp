@@ -1777,6 +1777,11 @@ void Client::WhoAll(Who_All_Struct* whom) {
 	if (!worldserver.Connected())
 		Message(Chat::White, "Error: World server disconnected");
 	else {
+		if (RuleB(RoT, DisableWho)) {
+			if (!this->GetGM()) {
+				return;
+			}
+		}
 		auto pack = new ServerPacket(ServerOP_Who, sizeof(ServerWhoAll_Struct));
 		ServerWhoAll_Struct* whoall = (ServerWhoAll_Struct*) pack->pBuffer;
 		whoall->admin = this->Admin();
@@ -1797,6 +1802,10 @@ void Client::WhoAll(Who_All_Struct* whom) {
 }
 
 void Client::FriendsWho(char *FriendsString) {
+	
+	if (RuleB(RoT, DisableWho)) {
+		return;
+	}
 
 	if (!worldserver.Connected())
 		Message(Chat::White, "Error: World server disconnected");
@@ -8048,8 +8057,8 @@ bool Client::CanPvP(Client *c) {
 	if (IsDueling() && c->IsDueling() && GetDuelTarget() == c->GetID() && c->GetDuelTarget() == GetID())
 		return true;
 
-	//if (zone->GetFFA() || c->GetFFA()) -- Enable this soon
-	//	return true;
+	if (zone->GetFFA()) //|| c->GetFFA()) //code FFA heal logic
+		return true;
 
 	// Is target required level for pvp
 	if (GetLevel() < WorldPVPMinLevel() || c->GetLevel() < WorldPVPMinLevel())

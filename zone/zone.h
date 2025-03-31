@@ -140,6 +140,7 @@ public:
 	inline const uint32	GetZoneID() const { return zoneid; }
 	inline const uint32	GetGuildID() const { return guildid; }
 	inline const uint8	GetZoneType() const { return zone_type; }
+	inline bool GetFFA() { return ffa; }
 
 	inline const bool IsReducedSpawnTimersZone() { return reducedspawntimers;  }
 	inline const bool IsTrivialLootCodeEnabled() { return trivial_loot_code; }
@@ -461,6 +462,8 @@ private:
 	uint16	m_graveyard_timer;
 	glm::vec4 m_graveyard;
 	int		default_ruleset;
+
+	bool	ffa;
 
 	int	zone_total_blocked_spells;
 	ZoneSpellsBlocked *blocked_spells;

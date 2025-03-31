@@ -392,6 +392,9 @@ RULE_CATEGORY_END()
 
 RULE_CATEGORY( RoT )
 RULE_BOOL ( RoT, EnableAAZones, true, "enables exp duplication as aaexp in specific zones, CB|BB < 15.")
+RULE_INT ( RoT, PvPBaseDamageMultiplier, 1, "1 is default, multiplies the base weapon damage by this amount, increases melee damage.")
+RULE_BOOL ( RoT, DisableWho, false, "Disable / who and / who friend")
+RULE_BOOL ( RoT, GroupCrossDispel, true, "When enabled, dispelling groupmates only removes detrimental debuffs.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(SelfFound)

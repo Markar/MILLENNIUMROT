@@ -446,6 +446,7 @@ void Client::AddEXP(uint32 in_add_exp, uint8 conlevel, Mob* killed_mob, int16 av
 
 	if (RuleB(RoT, EnableAAZones)) {
 		uint8 MaxAApts = 0;
+		uint32 aaxp = 0;
 		switch (GetZoneID())
 		{
 		case Zones::CRUSHBONE:
@@ -454,6 +455,7 @@ void Client::AddEXP(uint32 in_add_exp, uint8 conlevel, Mob* killed_mob, int16 av
 			break;
 		case Zones::MISTMOORE:
 		case Zones::UNREST:
+		case Zones::NAJENA:
 			MaxAApts = 25;
 			break;
 		case Zones::GUKBOTTOM:
@@ -464,13 +466,20 @@ void Client::AddEXP(uint32 in_add_exp, uint8 conlevel, Mob* killed_mob, int16 av
 			break;
 		}
 		if (GetAAPoints() < MaxAApts) {
+			if (GetGM()) {
+				Message(Chat::Yellow, "You have the proper amount of AAs (%i) to receive AAs in this zone (%i)!", GetAAPoints(), MaxAApts);
+			}
+			
 			uint32 aaxp = RuleI(AA, ExpPerPoint) * (add_exp / requiredxp); //whatever % our exp gain was of our next level * by whats required to gain an AA
 			uint32 aaxp_cap = RuleI(AA, ExpPerPoint) / 8u;	// kill exp cap is 12.5%
 			if (aaxp > aaxp_cap) { //if aaexp gain is greater than 12.5%, set it to 12.5%
 				aaxp = aaxp_cap;
 			}
 			add_aaxp = aaxp;
-		}	
+		}
+		if (GetGM()) {
+			Message(Chat::Yellow, "AA EXP received %f max AAs allowed in this zone %i AAs character has %i", aaxp, MaxAApts, GetAAPoints());
+		}
 	}
 
 

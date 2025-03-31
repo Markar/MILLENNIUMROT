@@ -168,6 +168,7 @@ public:
 	virtual FACTION_VALUE GetReverseFactionCon(Mob* iOther, uint32 other_guild = 0);
 	virtual FACTION_VALUE GetReverseFactionCon(Mob* iOther, bool ignore_feign_death, uint32 other_guild = 0);
 	void	SetGuild(int32 guild = 0);
+	inline void SetHostile(bool hostile) { npc_nonguild_hostile = hostile; };
 	void	DescribeAggro(Client *towho, Mob *mob, bool verbose);
 
 	void	GoToBind(uint8 bindnum = 0)	{ GMMove(m_SpawnPoint.x, m_SpawnPoint.y, m_SpawnPoint.z, m_SpawnPoint.w); }

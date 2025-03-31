@@ -837,6 +837,11 @@ bool Client::Attack(Mob* other, int hand, int damagePct)
 	uint8 mylevel = GetLevel();
 	int baseDamage = GetBaseDamage(other, hand);
 
+	if (IsClient()) {
+		baseDamage = baseDamage * RuleI(RoT, PvPBaseDamageMultiplier);
+	}
+	
+
 	// anti-twink damage caps.  Taken from decompiles
 	if (mylevel < 10)
 	{
@@ -1561,6 +1566,8 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 										new_corpse->AllowPlayerLoot(group->members[i]);
 							}
 						}
+					} else {
+						new_corpse->AllowPlayerLoot(killerMob);
 					}
 				} else {
 					new_corpse->AllowPlayerLoot(killerMob);

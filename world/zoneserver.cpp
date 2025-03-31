@@ -994,6 +994,9 @@ void ZoneServer::HandleMessage(uint16 opcode, const EQ::Net::Packet& p) {
 	}
 
 	case ServerOP_FriendsWho: {
+		if (RuleB(RoT, DisableWho)) {
+			break;
+		}
 		auto FriendsWho = (ServerFriendsWho_Struct*)pack->pBuffer;
 		client_list.SendFriendsWho(FriendsWho, this);
 		break;

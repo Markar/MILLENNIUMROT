@@ -718,6 +718,11 @@ void ClientList::SendWhoAll(uint32 fromid,const char* to, int16 admin, Who_All_S
 			countcle = countclients.GetData();
 			if (WhoAllFilter(countcle, whom, admin, whomlen))
 			{
+				if (RuleB(RoT, DisableWho)) {
+					if (admin < countcle->Admin()) {
+						return;
+					}
+				}
 				// Count for GMs.
 				if ((countcle->Anon() > 0 && admin >= countcle->Admin() && admin >= AccountStatus::QuestTroupe) || countcle->Anon() == 0)
 				{
