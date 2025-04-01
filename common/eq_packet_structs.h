@@ -356,7 +356,7 @@ struct NewZone_Struct {
 	/*0704*/	uint32	SuspendBuffs;
 	/*0708*/	uint8	expansion;
 	/*0709*/	bool	never_idle;
-	/*0710*/
+	/*0710*/	bool	ffa;
 };
 
 /*

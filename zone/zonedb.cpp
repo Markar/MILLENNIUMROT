@@ -115,7 +115,7 @@ bool ZoneDatabase::GetZoneCFG(uint32 zoneid, NewZone_Struct *zone_data, bool &ca
         "rain_duration1, rain_duration2, rain_duration3, rain_duration4, " // 4
         "snow_chance1, snow_chance2, snow_chance3, snow_chance4, " // 4
         "snow_duration1, snow_duration2, snow_duration3, snow_duration4, " // 4
-        "skylock, skip_los, music, expansion, dragaggro, never_idle, castdungeon, " 
+        "skylock, skip_los, music, expansion, dragaggro, never_idle, castdungeon, " // 7 
         "pull_limit, graveyard_time, max_z, reducedspawntimers, trivial_loot_code, ffa " // 8
         "FROM zone WHERE zoneidnumber = {} {}",
         zoneid,
@@ -226,7 +226,7 @@ bool ZoneDatabase::GetZoneCFG(uint32 zoneid, NewZone_Struct *zone_data, bool &ca
 	zone_data->max_z = atof(row[65]);
 	reducedspawntimers = atoi(row[66]);
 	trivial_loot_code = atoi(row[67]);
-	ffa = atoi(row[68]);
+	ffa = atoi(row[68]) == 0 ? false : true;
 	return true;
 }
 

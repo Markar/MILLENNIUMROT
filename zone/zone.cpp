@@ -983,6 +983,7 @@ Zone::Zone(uint32 in_zoneid, const char* in_short_name, uint32 in_guildid)
 	zone_total_blocked_spells = 0;
 	reducedspawntimers = false;
 	trivial_loot_code = false;
+	ffa = false;
 	aas = nullptr;
 	totalAAs = 0;
 	zone_has_current_time = false;
@@ -1265,7 +1266,7 @@ bool Zone::LoadZoneCFG(const char* filename)
 	safe_delete_array(map_name);
 
 	if (!database.GetZoneCFG(ZoneID(filename), &newzone_data, can_bind,
-		can_combat, can_levitate, can_castoutdoor, is_city, zone_type, default_ruleset, &map_name, can_bind_others, skip_los, drag_aggro, can_castdungeon, pull_limit,reducedspawntimers, trivial_loot_code, is_hotzone))
+		can_combat, can_levitate, can_castoutdoor, is_city, zone_type, default_ruleset, &map_name, can_bind_others, skip_los, drag_aggro, can_castdungeon, pull_limit,reducedspawntimers, trivial_loot_code, is_hotzone, ffa))
 	{
 		LogError("Error loading the Zone Config.");
 		return false;
@@ -1275,9 +1276,6 @@ bool Zone::LoadZoneCFG(const char* filename)
 	strcpy(newzone_data.zone_short_name, GetShortName());
 	strcpy(newzone_data.zone_long_name, GetLongName());
 	strcpy(newzone_data.zone_short_name2, GetShortName());
-
-	ffa = newzone_data.ffa;
-
 
 	LogInfo("Successfully loaded Zone Config.");
 	return true;

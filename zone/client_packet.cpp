@@ -635,6 +635,10 @@ void Client::CompleteConnect()
 
 	parse->EventPlayer(EVENT_ENTER_ZONE, this, "", 0);
 
+	if (zone->GetFFA()) {
+		Message(Chat::Red, "WARNING: This is a free for all zone. There are no PvP level requirements.");
+	}
+	
 	/* This sub event is for if a player logs in for the first time since entering world. */
 	if (firstlogon == 1){
 		parse->EventPlayer(EVENT_CONNECT, this, "", 0);
