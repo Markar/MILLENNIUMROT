@@ -120,6 +120,7 @@ public:
 	void			AI_SetupNextWaypoint();
 	bool			AI_AddNPCSpells(uint32 iDBSpellsID);
 	bool			AI_AddNPCSpellsEffects(uint32 iDBSpellsEffectsID);
+	virtual bool	AI_EngagedCastCheck();
 	bool			AI_HasSpells() { return HasAISpell; }
 	bool			AI_HasSpellsEffects() { return HasAISpellEffects; }
 	void			ApplyAISpellEffects(StatBonuses* newbon);
@@ -127,6 +128,7 @@ public:
 	bool			IsAssisting() { return assisting; }	// if this is true, NPC will not call for help.  sets to false if NPC gets any hate
 	void			SetAssisting(bool value) { assisting = value; }
 
+	virtual bool	AI_IdleCastCheck();
 	virtual void	AI_Event_SpellCastFinished(bool iCastSucceeded, uint16 slot);
 	void			TriggerAutoCastTimer() { if (!IsCasting() && AIautocastspell_timer) AIautocastspell_timer->Trigger(); }
 

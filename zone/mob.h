@@ -1014,7 +1014,8 @@ protected:
 	int _GetWalkSpeed() const;
 	int _GetFearSpeed() const;
 	void DoFearMovement();
-
+	virtual bool AI_EngagedCastCheck() { return(false); }
+	virtual bool AI_IdleCastCheck() { return(false); }
 
 
 

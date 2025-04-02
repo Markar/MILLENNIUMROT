@@ -397,6 +397,7 @@ public:
 	int		FleeAllyCount(Mob *attacker, Mob *exclude);
 	int		StackedMobsCount(Mob *center);
 	void	AIYellForHelp(Mob* sender, Mob* attacker);
+	bool	AICheckCloseBeneficialSpells(NPC* caster, uint8 iChance, float iRange, uint16 iSpellTypes);
 	Mob*	GetTargetForMez(Mob* caster);
 	uint32	CheckNPCsClose(Mob *center);
 	bool	CheckMobCloseForCollision(Mob *attacker, Mob *exclude, float x, float y, float dist, uint8 beaconType);
