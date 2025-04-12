@@ -858,7 +858,7 @@ public:
 	inline uint16 MaxSkill(EQ::skills::SkillType skill_id) const { return MaxSkill(skill_id, GetClass(), GetLevel()); }
 	uint16	GetMaxSkillAfterSpecializationRules(EQ::skills::SkillType skill_id, uint16 maxSkill);
 	uint8 GetSkillTrainLevel(EQ::skills::SkillType skill_id, uint16 class_id);
-	void MaxSkills();
+	void MaxSkills(bool tradeskills = true);
 
 	bool TradeskillExecute(DBTradeskillRecipe_Struct *spec);
 	void CheckIncreaseTradeskill(bool isSuccessfulCombine, EQ::skills::SkillType tradeskill);

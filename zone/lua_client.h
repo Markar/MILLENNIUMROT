@@ -287,7 +287,7 @@ public:
 	bool HasTemporaryLastName();
 
 	uint8 GetSkillTrainLevel(int skill_id);
-	void MaxSkills();
+	void MaxSkills(bool tradeskills);
 	bool SendGMCommand(std::string message);
 	bool SendGMCommand(std::string message, bool ignore_status);
 

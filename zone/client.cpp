@@ -7241,6 +7241,10 @@ std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 			continue;
 		}
 
+		if (spells[spell_id].massscribe == 0) {
+			continue;
+		}
+
 		if (spells[spell_id].skill == EQ::skills::SkillTigerClaw) {
 			continue;
 		}
@@ -7319,7 +7323,7 @@ uint16 Client::ScribeSpells(uint8 min_level, uint8 max_level)
 					).c_str()
 				);
 				break;
-			}
+			}	
 
 			if (HasSpellScribed(spell_id)) {
 				continue;
@@ -7990,7 +7994,7 @@ void Client::SendReloadCommandMessages() {
 	SendChatLineBreak();
 }
 
-void Client::MaxSkills()
+void Client::MaxSkills(bool tradeskills)
 {
 	for (const auto& s : EQ::skills::GetSkillTypeMap()) {
 		auto current_skill_value = (
@@ -7998,7 +8002,10 @@ void Client::MaxSkills()
 			MAX_SPECIALIZED_SKILL :
 			skill_caps.GetSkillCap(GetClass(), s.first, GetLevel()).cap
 			);
-
+		
+		if (!tradeskills && EQ::skills::IsTradeskill((EQ::skills::SkillType)s.first)) {
+			continue;
+		}
 		if (GetSkill(s.first) < current_skill_value) {
 			SetSkill(s.first, current_skill_value);
 		}

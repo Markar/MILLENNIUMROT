@@ -641,6 +641,7 @@ struct SPDat_Spell_Struct
 /* 184 */	bool not_player_spell;
 /* 185 */	bool disabled;
 /* 186 */	bool persist_through_death; // Quarm addition - Used by BuffFadeNonPersistDeath()
+/* 187 */	bool massscribe; // RoT addition - Used by ScribeAllSpells
 			uint8 DamageShieldType; // This field does not exist in spells_us.txt
 			int min_castinglevel;
 			bool bardsong;

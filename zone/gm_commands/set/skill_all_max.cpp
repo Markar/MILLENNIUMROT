@@ -7,7 +7,7 @@ void SetSkillAllMax(Client *c, const Seperator *sep)
 		t = c->GetTarget()->CastToClient();
 	}
 
-	t->MaxSkills();
+	t->MaxSkills(true);
 
 	c->Message(
 		Chat::White,

@@ -1409,10 +1409,10 @@ uint8 Lua_Client::GetSkillTrainLevel(int skill_id)
 	return self->GetSkillTrainLevel(static_cast<EQ::skills::SkillType>(skill_id), self->GetClass());
 }
 
-void Lua_Client::MaxSkills()
+void Lua_Client::MaxSkills(bool tradeskills)
 {
 	Lua_Safe_Call_Void();
-	self->MaxSkills();
+	self->MaxSkills(tradeskills);
 }
 
 luabind::scope lua_register_client() {
