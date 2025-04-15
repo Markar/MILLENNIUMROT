@@ -189,7 +189,7 @@ struct PetInfo {
 	float	size;
 	int16	focusItemId;
 	SpellBuff_Struct	Buffs[BUFF_COUNT];
-	uint32	Items[EQ::invslot::EQUIPMENT_COUNT];
+	uint32	Items[EQ::invslot::EQUIPMENT_COUNT + 1];
 	char	Name[64];
 };
 

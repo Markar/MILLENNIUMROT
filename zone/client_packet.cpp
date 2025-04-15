@@ -437,7 +437,7 @@ void Client::CompleteConnect()
 
 	/* Send Raid Members via Packet*/
 	uint32 raidid = database.GetRaidID(GetName());
-	Raid *raid = nullptr;
+	Raid* raid = nullptr;
 	if (raidid > 0) {
 		raid = entity_list.GetRaidByID(raidid);
 		bool loaded_raid = false;
@@ -475,7 +475,7 @@ void Client::CompleteConnect()
 	}
 	if (!raid) {
 		auto outapp = new EQApplicationPacket(OP_RaidUpdate, sizeof(RaidGeneral_Struct));
-		RaidGeneral_Struct *rg = (RaidGeneral_Struct*)outapp->pBuffer;
+		RaidGeneral_Struct* rg = (RaidGeneral_Struct*)outapp->pBuffer;
 		rg->action = RaidCommandSendDisband;
 		strn0cpy(rg->leader_name, GetName(), 64);
 		strn0cpy(rg->player_name, GetName(), 64);
@@ -491,19 +491,19 @@ void Client::CompleteConnect()
 		}
 
 		uint16 spell_id = buffs[j1].spellid;
-		const SPDat_Spell_Struct &spell = spells[spell_id];
+		const SPDat_Spell_Struct& spell = spells[spell_id];
 
-		for (int x1 = 0; x1 < EFFECT_COUNT; x1++) 
+		for (int x1 = 0; x1 < EFFECT_COUNT; x1++)
 		{
-			switch (spell.effectid[x1]) 
+			switch (spell.effectid[x1])
 			{
 			case SE_IllusionCopy:
-			case SE_Illusion: 
+			case SE_Illusion:
 			{
 				ApplyIllusion(spell, x1, this);
 				break;
 			}
-			case SE_SummonHorse: 
+			case SE_SummonHorse:
 			{
 				SummonHorse(buffs[j1].spellid);
 				//hasmount = true;	//this was false, is that the correct thing?
@@ -520,7 +520,7 @@ void Client::CompleteConnect()
 						Message(Chat::Red, "You can't levitate in this zone.");
 					}
 				}
-				else{
+				else {
 					SendAppearancePacket(AppearanceType::FlyMode, 2);
 				}
 				break;
@@ -548,7 +548,7 @@ void Client::CompleteConnect()
 			}
 			case SE_VoiceGraft:
 			{
-				if(!GetPet())
+				if (!GetPet())
 				{
 					FadeVoiceGraft();
 				}
@@ -563,6 +563,22 @@ void Client::CompleteConnect()
 				break;
 			}
 			}
+		}
+	}
+
+	if (RuleB(Quarm, PetZoneWithOwner))
+	{
+		if (m_petinfo.SpellID > 1 && !GetPet() && m_petinfo.SpellID <= SPDAT_RECORDS) {
+			MakePoweredPet(m_petinfo.SpellID, spells[m_petinfo.SpellID].teleport_zone, m_petinfo.petpower,
+				m_petinfo.Name, m_petinfo.size);
+			if (GetPet() && GetPet()->IsNPC()) {
+				NPC* pet = GetPet()->CastToNPC();
+				pet->SetPetState(m_petinfo.Buffs, m_petinfo.Items);
+				pet->CalcBonuses();
+				pet->SetHP(m_petinfo.HP);
+				pet->SetMana(m_petinfo.Mana);
+			}
+			m_petinfo.SpellID = 0;
 		}
 	}
 
@@ -1951,9 +1967,15 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 
 	//database.LoadPetInfo(this);
 	memset(&m_petinfo, 0, sizeof(PetInfo)); // not used for TAKP but leaving in case someone wants to fix it up for custom servers
-
 	/* Moved here so it's after where we load the pet data. */
 	memset(&m_suspendedminion, 0, sizeof(PetInfo));
+	
+	if (RuleB(Quarm, PetZoneWithOwner)) {
+		/* Load Pet */
+		database.LoadPetInfo(this);
+	}
+
+
 
 	/* Server Zone Entry Packet */
 	outapp = new EQApplicationPacket(OP_ZoneEntry, sizeof(ServerZoneEntry_Struct));

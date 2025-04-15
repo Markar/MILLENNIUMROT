@@ -715,9 +715,9 @@ void Lua_Client::ScribeSpell(int spell_id, int slot, bool update_client) {
 	self->ScribeSpell(spell_id, slot, update_client);
 }
 
-uint16 Lua_Client::ScribeSpells(uint8 min_level, uint8 max_level) {
-	Lua_Safe_Call_Int();
-	return self->ScribeSpells(min_level, max_level);
+void Lua_Client::ScribeSpells(uint8 min_level, uint8 max_level) {
+	Lua_Safe_Call_Void();
+	self->ScribeSpells(min_level, max_level);
 }
 
 void Lua_Client::UnscribeSpell(int slot) {
@@ -1654,14 +1654,13 @@ luabind::scope lua_register_client() {
 		.def("IsSoloOnly", (int(Lua_Client::*)(void))&Lua_Client::IsSoloOnly)
 		.def("ClearPlayerInfoAndGrantStartingItems", (void(Lua_Client::*)(void))&Lua_Client::ClearPlayerInfoAndGrantStartingItems)
 		.def("ResetPlayerForNewGamePlus", (void(Lua_Client::*)(uint8,uint8,bool))&Lua_Client::ResetPlayerForNewGamePlus)
-		.def("ScribeSpells", (uint16(Lua_Client::*)(uint8, uint8))& Lua_Client::ScribeSpells)
+		.def("ScribeSpells", (void(Lua_Client::*)(uint8, uint8))& Lua_Client::ScribeSpells)
 		.def("IsMarried", (bool(Lua_Client::*)())&Lua_Client::IsMarried)
 		.def("SetMarried", (void(Lua_Client::*)(const char*))&Lua_Client::SetMarried)
 		.def("SetTemporaryLastName", (void(Lua_Client::*)(const char*))&Lua_Client::SetTemporaryLastName)
 		.def("SetTemporaryCustomizedLastName", (void(Lua_Client::*)(const char*))&Lua_Client::SetTemporaryCustomizedLastName)
 		.def("HasTemporaryLastName", (bool(Lua_Client::*)(void))&Lua_Client::HasTemporaryLastName)
 		.def("PermaGender", (void(Lua_Client::*)(uint32))&Lua_Client::PermaGender)
-		.def("ScribeSpells", (uint16(Lua_Client::*)(uint8, uint8))& Lua_Client::ScribeSpells)
 		.def("SendGMCommand", (bool(Lua_Client:: *)(std::string)) &Lua_Client::SendGMCommand)
 		.def("SendGMCommand", (bool(Lua_Client:: *)(std::string, bool)) &Lua_Client::SendGMCommand)
 		.def("SetClientMaxLevel", (void(Lua_Client::*)(int))& Lua_Client::SetClientMaxLevel)

@@ -1981,6 +1981,8 @@ bool NPC::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::SkillTyp
 	if(GetOwner())
 	{
 		GetOwner()->FadeVoiceGraft();
+		if (GetOwner()->IsClient() && !IsCharmedPet())
+		GetOwner()->CastToClient()->SavePetInfo();
 	}
 
 	if (GetSwarmOwner())

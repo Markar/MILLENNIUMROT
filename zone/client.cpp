@@ -251,6 +251,9 @@ Client::Client(EQStreamInterface* ieqs) : Mob(
 	//for good measure:
 	memset(&m_pp, 0, sizeof(m_pp));
 	memset(&m_epp, 0, sizeof(m_epp));
+	memset(&m_petinfo, 0, sizeof(PetInfo)); // not used for TAKP but leaving in case someone wants to fix it up for custom servers
+	/* Moved here so it's after where we load the pet data. */
+	memset(&m_suspendedminion, 0, sizeof(PetInfo));
 	PendingTranslocate = false;
 	PendingSacrifice = false;
 	sacrifice_caster_id = 0;
@@ -901,23 +904,9 @@ bool Client::Save(uint8 iCommitNow) {
 	/* Total Time Played */
 	TotalSecondsPlayed += (time(nullptr) - m_pp.lastlogin);
 	m_pp.timePlayedMin = (TotalSecondsPlayed / 60);
-	m_pp.lastlogin = time(nullptr);
+	m_pp.lastlogin = time(nullptr);	
 
-	// we don't reload the pet data for TAKP so don't really need this
-	/*
-	if (GetPet() && !GetPet()->IsFamiliar() && GetPet()->CastToNPC()->GetPetSpellID() && !dead) {
-		NPC *pet = GetPet()->CastToNPC();
-		m_petinfo.SpellID = pet->CastToNPC()->GetPetSpellID();
-		m_petinfo.HP = pet->GetHP();
-		m_petinfo.Mana = pet->GetMana();
-		pet->GetPetState(m_petinfo.Buffs, m_petinfo.Items, m_petinfo.Name);
-		m_petinfo.petpower = pet->GetPetPower();
-		m_petinfo.size = pet->GetSize();
-	} else {
-		memset(&m_petinfo, 0, sizeof(struct PetInfo));
-	}
-	database.SavePetInfo(this);
-	*/
+	SavePetInfo();
 
 	p_timers.Store(&database);
 
@@ -926,6 +915,26 @@ bool Client::Save(uint8 iCommitNow) {
 	database.SaveCharacterData(this->CharacterID(), this->AccountID(), &m_pp, &m_epp); /* Save Character Data */
 
 	return true;
+}
+
+void Client::SavePetInfo()
+{
+	if (GetPet() && GetPet()->IsNPC()) {
+		NPC* pet = GetPet()->CastToNPC();
+		if (pet)
+		{
+			m_petinfo.SpellID = pet->CastToNPC()->GetPetSpellID();
+			m_petinfo.HP = pet->GetHP();
+			m_petinfo.Mana = pet->GetMana();
+			pet->GetPetState(m_petinfo.Buffs, m_petinfo.Items, m_petinfo.Name);
+			m_petinfo.petpower = pet->GetPetPower();
+			m_petinfo.size = pet->GetSize();
+		}
+	}
+	else {
+		memset(&m_petinfo, 0, sizeof(PetInfo));
+	}
+	database.SavePetInfo(this);
 }
 
 void Client::SendSound(uint16 soundID)

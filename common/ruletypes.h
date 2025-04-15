@@ -388,6 +388,7 @@ RULE_INT(Quarm, SpecialExpansionZoneIDBegin, 1500, "")
 RULE_INT(Quarm, SpecialExpansionZoneIDEnd, 5000, "")
 RULE_BOOL(Quarm, UseFixedShowHelmBehavior, true, "Fixes ShowHelm to be a personal toggle that works like other MMOs. Also adds full compatibility with Zeal's ShowHelm feature and Velious Helms support.")
 RULE_INT(Quarm, WarnDllVersionBelow, 1, "Sends a Client-out-of-date warning message to clients below this dll version.")
+RULE_BOOL(Quarm, PetZoneWithOwner, true, "Enables pet zoning with its owner.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY( RoT )

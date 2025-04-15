@@ -2419,122 +2419,187 @@ void ZoneDatabase::LoadBuffs(Client *client) {
 
 void ZoneDatabase::SavePetInfo(Client *client)
 {
-	PetInfo *petinfo = nullptr;
+	if (!client)
+		return;
 
 	// Pet Info
-	std::vector<CharacterPetInfoRepository::CharacterPetInfo> pet_infos = {};
-	CharacterPetInfoRepository::CharacterPetInfo pet_info = {};
+	std::vector<CharacterPetInfoRepository::CharacterPetInfo> current_pet_infos;
+	CharacterPetInfoRepository::CharacterPetInfo current_pet_info = CharacterPetInfoRepository::NewEntity();
 
 	// Pet buffs
-	std::vector<CharacterPetBuffsRepository::CharacterPetBuffs> pet_buffs = {};
-	CharacterPetBuffsRepository::CharacterPetBuffs pet_buff = {};
+	std::vector<CharacterPetBuffsRepository::CharacterPetBuffs> current_pet_buffs;
+	CharacterPetBuffsRepository::CharacterPetBuffs current_pet_buff = CharacterPetBuffsRepository::NewEntity();
 
 	// Pet inventory
-	std::vector<CharacterPetInventoryRepository::CharacterPetInventory> inventory = {};
-	CharacterPetInventoryRepository::CharacterPetInventory item = {};
+	std::vector<CharacterPetInventoryRepository::CharacterPetInventory> current_inventory;
+	CharacterPetInventoryRepository::CharacterPetInventory current_item = CharacterPetInventoryRepository::NewEntity();
 
-	// Loop through pet types
-	for (int pet = 0; pet < 2; pet++) {
-		petinfo = client->GetPetInfo(pet);
-		if (!petinfo) {
+	PetInfo& petinfo = client->GetPetInfo();
+
+	// build pet info into struct
+	current_pet_info.char_id = client->CharacterID();
+	current_pet_info.pet = 0;
+	current_pet_info.petname = petinfo.Name;
+	current_pet_info.petpower = (int32_t)petinfo.petpower;
+	current_pet_info.spell_id = (int32_t)petinfo.SpellID;
+	current_pet_info.hp = (int32_t)petinfo.HP;
+	current_pet_info.mana = (int32_t)petinfo.Mana;
+	current_pet_info.size = petinfo.size;
+
+	// add pet info to vector
+	current_pet_infos.push_back(current_pet_info);
+
+	// loop through pet buffs
+	for (int index = 0; index < BUFF_COUNT; index++) {
+		if (!IsValidSpell(petinfo.Buffs[index].spellid)) {
 			continue;
 		}
 
-		// build pet info into struct
-		pet_info.char_id = client->CharacterID();
-		pet_info.pet = pet;
-		pet_info.petname = petinfo->Name;
-		pet_info.petpower = petinfo->petpower;
-		pet_info.spell_id = petinfo->SpellID;
-		pet_info.hp = petinfo->HP;
-		pet_info.mana = petinfo->Mana;
-		pet_info.size = petinfo->size;
+		current_pet_buff.char_id = client->CharacterID();
+		current_pet_buff.pet = 0;
+		current_pet_buff.slot = index;
+		current_pet_buff.spell_id = petinfo.Buffs[index].spellid;
+		current_pet_buff.caster_level = petinfo.Buffs[index].level;
+		current_pet_buff.ticsremaining = petinfo.Buffs[index].duration;
+		current_pet_buff.counters = petinfo.Buffs[index].counters;
 
-		// add pet info to vector
-		pet_infos.push_back(pet_info);
+		// add pet buffs to vector
+		current_pet_buffs.push_back(current_pet_buff);
+	}
 
-		// build pet buffs into struct
-		int pet_buff_count = 0;
-		int max_slots = RuleI(Spells, MaxTotalSlotsPET);
+		
+	// loop through pet inventory
+	for (int index = 0; index <= EQ::invslot::EQUIPMENT_END; index++) {
 
-		// count pet buffs
-		for (int index = 0; index < max_slots; index++) {
-			if (!IsValidSpell(petinfo->Buffs[index].spellid)) {
-				continue;
-			}
-			pet_buff_count++;
-		}
-		// reserve space for pet buffs
-		pet_buffs.reserve(pet_buff_count);
+		if (index < EQ::invslot::EQUIPMENT_BEGIN || index > EQ::invslot::EQUIPMENT_END)
+			continue;
 
-		// loop through pet buffs
-		for (int index = 0; index < max_slots; index++) {
-			if (!IsValidSpell(petinfo->Buffs[index].spellid)) {
-				continue;
-			}
-
-			pet_buff.char_id = client->CharacterID();
-			pet_buff.pet = pet;
-			pet_buff.slot = index;
-			pet_buff.spell_id = petinfo->Buffs[index].spellid;
-			pet_buff.caster_level = petinfo->Buffs[index].level;
-			pet_buff.ticsremaining = petinfo->Buffs[index].duration;
-			pet_buff.counters = petinfo->Buffs[index].counters;
-
-			// add pet buffs to vector
-			pet_buffs.push_back(pet_buff);
+		if (!petinfo.Items[index]) {
+			continue;
 		}
 
-		// build pet inventory into struct
-		int pet_inventory_count = 0;
-		for (int index = EQ::invslot::EQUIPMENT_BEGIN; index < EQ::invslot::EQUIPMENT_END; index++) {
-			if (!petinfo->Items[index]) {
-				continue;
+
+		current_item.char_id = client->CharacterID();
+		current_item.pet = 0;
+		current_item.slot = index;
+		current_item.item_id = petinfo.Items[index];
+
+		// add pet inventory to vector
+		current_inventory.push_back(current_item);
+	}
+
+		// insert pet info into database
+		if (!current_pet_infos.empty()) {
+			// Delete existing pet info
+			CharacterPetInfoRepository::DeleteWhere(database, fmt::format("char_id = {} and pet = 0", client->CharacterID()));
+
+			// Insert new pet info
+			CharacterPetInfoRepository::InsertMany(database, current_pet_infos);
+		}
+			// insert pet buffs into database
+			if (!current_pet_buffs.empty()) {
+				// Delete existing pet buffs
+				CharacterPetBuffsRepository::DeleteWhere(database, fmt::format("char_id = {} AND pet = 0", client->CharacterID()));
+				// Insert new pet buffs
+				CharacterPetBuffsRepository::InsertMany(database, current_pet_buffs);
 			}
-			pet_inventory_count++;
+
+			// insert pet inventory into database
+			if (!current_inventory.empty()) {
+				// Delete existing pet inventory
+				CharacterPetInventoryRepository::DeleteWhere(database, fmt::format("char_id = {} AND pet = 0", client->CharacterID()));
+
+				// Insert new pet inventory
+				CharacterPetInventoryRepository::InsertMany(database, current_inventory);
+			}
+
+
+			PetInfo& suspendedpetinfo = client->GetSuspendedPetInfo();
+
+			// Pet Info
+			std::vector<CharacterPetInfoRepository::CharacterPetInfo> suspended_pet_infos;
+			auto suspended_pet_info = CharacterPetInfoRepository::NewEntity();
+
+			// Pet buffs
+			std::vector<CharacterPetBuffsRepository::CharacterPetBuffs> suspended_pet_buffs;
+			CharacterPetBuffsRepository::CharacterPetBuffs suspended_pet_buff = CharacterPetBuffsRepository::NewEntity();
+
+			// Pet inventory
+			std::vector<CharacterPetInventoryRepository::CharacterPetInventory> suspended_inventory;
+			CharacterPetInventoryRepository::CharacterPetInventory suspended_item = CharacterPetInventoryRepository::NewEntity();
+
+			// build pet info into struct
+			suspended_pet_info.char_id = client->CharacterID();
+			suspended_pet_info.pet = (int32_t)1;
+			suspended_pet_info.petname = suspendedpetinfo.Name;
+			suspended_pet_info.petpower = (int32_t)suspendedpetinfo.petpower;
+			suspended_pet_info.spell_id = (int32_t)suspendedpetinfo.SpellID;
+			suspended_pet_info.hp = (int32_t)suspendedpetinfo.HP;
+			suspended_pet_info.mana = (int32_t)suspendedpetinfo.Mana;
+			suspended_pet_info.size = suspendedpetinfo.size;
+
+			// loop through pet buffs
+			for (int index = 0; index < BUFF_COUNT; index++) {
+				if (!IsValidSpell(suspendedpetinfo.Buffs[index].spellid)) {
+					continue;
+				}
+				suspended_pet_buff.char_id = client->CharacterID();
+				suspended_pet_buff.pet = 1;
+				suspended_pet_buff.slot = index;
+				suspended_pet_buff.spell_id = suspendedpetinfo.Buffs[index].spellid;
+				suspended_pet_buff.caster_level = suspendedpetinfo.Buffs[index].level;
+				suspended_pet_buff.ticsremaining = suspendedpetinfo.Buffs[index].duration;
+				suspended_pet_buff.counters = suspendedpetinfo.Buffs[index].counters;
+
+				// add pet buffs to vector
+				suspended_pet_buffs.push_back(suspended_pet_buff);
 		}
 
 		// loop through pet inventory
-		for (int index = EQ::invslot::EQUIPMENT_BEGIN; index <= EQ::invslot::EQUIPMENT_END; index++) {
-			if (!petinfo->Items[index]) {
+		for (int i = 0; i <= EQ::invslot::EQUIPMENT_END; i++) {
+
+			if (i < EQ::invslot::EQUIPMENT_BEGIN || i > EQ::invslot::EQUIPMENT_END)
+				continue;
+
+			if (!suspendedpetinfo.Items[i]) {
 				continue;
 			}
-			item.char_id = client->CharacterID();
-			item.pet = pet;
-			item.slot = index;
-			item.item_id = petinfo->Items[index];
+			suspended_item.char_id = client->CharacterID();
+			suspended_item.pet = 1;
+			suspended_item.slot = 0;
+			suspended_item.item_id = suspendedpetinfo.Items[i];
 
 			// add pet inventory to vector
-			inventory.push_back(item);
+			suspended_inventory.push_back(suspended_item);
 		}
 
 		// insert pet info into database
-		if (!pet_infos.empty()) {
+		if (!suspended_pet_infos.empty()) {
 			// Delete existing pet info
-			CharacterPetInfoRepository::DeleteWhere(database, fmt::format("char_id = {}", client->CharacterID()));
+			CharacterPetInfoRepository::DeleteWhere(database, fmt::format("char_id = {} AND pet = 1", client->CharacterID()));
 
 			// Insert new pet info
-			CharacterPetInfoRepository::InsertMany(database, pet_infos);
+			CharacterPetInfoRepository::InsertMany(database, suspended_pet_infos);
 		}
 
 		// insert pet buffs into database
-		if (!pet_buffs.empty()) {
+		if (!suspended_pet_buffs.empty()) {
 			// Delete existing pet buffs
-			CharacterPetBuffsRepository::DeleteWhere(database, fmt::format("char_id = {}", client->CharacterID()));
+			CharacterPetBuffsRepository::DeleteWhere(database, fmt::format("char_id = {} AND pet = 1", client->CharacterID()));
 
 			// Insert new pet buffs
-			CharacterPetBuffsRepository::InsertMany(database, pet_buffs);
+			CharacterPetBuffsRepository::InsertMany(database, suspended_pet_buffs);
 		}
 
 		// insert pet inventory into database
-		if (!inventory.empty()) {
+		if (!suspended_inventory.empty()) {
 			// Delete existing pet inventory
-			CharacterPetInventoryRepository::DeleteWhere(database, fmt::format("char_id = {}", client->CharacterID()));
+			CharacterPetInventoryRepository::DeleteWhere(database, fmt::format("char_id = {} pet = 1", client->CharacterID()));
 
 			// Insert new pet inventory
-			CharacterPetInventoryRepository::InsertMany(database, inventory);
+			CharacterPetInventoryRepository::InsertMany(database, suspended_inventory);
 		}
-	}
+
 }
 
 void ZoneDatabase::RemoveAllFactions(Client *client) {
@@ -2557,11 +2622,11 @@ void ZoneDatabase::RemoveTempFactions(Client *client) {
 void ZoneDatabase::LoadPetInfo(Client *client) {
 
 	// Load current pet and suspended pet
-	PetInfo *petinfo = client->GetPetInfo(0);
-	PetInfo *suspended = client->GetPetInfo(1);
+	PetInfo& petinfo = client->GetPetInfo();
+	PetInfo& suspended = client->GetSuspendedPetInfo();
 
-	memset(petinfo, 0, sizeof(PetInfo));
-	memset(suspended, 0, sizeof(PetInfo));
+	memset(&petinfo, 0, sizeof(PetInfo));
+	memset(&suspended, 0, sizeof(PetInfo));
 
     std::string query = StringFormat("SELECT `pet`, `petname`, `petpower`, `spell_id`, "
                                     "`hp`, `mana`, `size` FROM `character_pet_info` "
@@ -2576,18 +2641,28 @@ void ZoneDatabase::LoadPetInfo(Client *client) {
         uint16 pet = atoi(row[0]);
 
 		if (pet == 0)
-			pi = petinfo;
+		{
+			strncpy(petinfo.Name, row[1], 64);
+			petinfo.petpower = (int16)atoi(row[2]);
+			petinfo.SpellID = (uint16)atoi(row[3]);
+			petinfo.HP = (uint32)atoll(row[4]);
+			petinfo.Mana = (uint32)atoll(row[5]);
+			petinfo.size = atof(row[6]);
+		}
 		else if (pet == 1)
-			pi = suspended;
+		{
+			strncpy(suspended.Name, row[1], 64);
+			suspended.petpower = atoi(row[2]);
+			suspended.SpellID = atoi(row[3]);
+			suspended.HP = atoll(row[4]);
+			suspended.Mana = atoll(row[5]);
+			suspended.size = atof(row[6]);
+		}
 		else
+		{
 			continue;
-
-		strncpy(pi->Name,row[1],64);
-		pi->petpower = atoi(row[2]);
-		pi->SpellID = atoi(row[3]);
-		pi->HP = atoul(row[4]);
-		pi->Mana = atoul(row[5]);
-		pi->size = atof(row[6]);
+		}
+		
 	}
 
     query = StringFormat("SELECT `pet`, `slot`, `spell_id`, `caster_level`, `castername`, "
@@ -2598,37 +2673,53 @@ void ZoneDatabase::LoadPetInfo(Client *client) {
 		return;
     }
 
-    for (auto& row = results.begin(); row != results.end(); ++row) {
-        uint16 pet = atoi(row[0]);
-        if (pet == 0)
-            pi = petinfo;
-        else if (pet == 1)
-            pi = suspended;
-        else
-            continue;
+    
+	for (auto& row = results.begin(); row != results.end(); ++row) {
+		uint16 pet = atoi(row[0]);
 
-        uint32 slot_id = atoul(row[1]);
-        if(slot_id >= RuleI(Spells, MaxTotalSlotsPET))
-				continue;
+		uint32 slot_id = atoi(row[1]);
+		if (slot_id >= RuleI(Spells, MaxTotalSlotsPET))
+			continue;
 
-        uint32 spell_id = atoul(row[2]);
-        if(!IsValidSpell(spell_id))
-            continue;
+		uint32 spell_id = atoi(row[2]);
+		if (!IsValidSpell(spell_id))
+			continue;
 
-        uint32 caster_level = atoi(row[3]);
-        int caster_id = 0;
-        // The castername field is currently unused
-        uint32 ticsremaining = atoul(row[5]);
-        uint32 counters = atoul(row[6]);
+		if (pet == 0)
+		{
+			uint32 caster_level = atoi(row[3]);
+			int caster_id = 0;
+			// The castername field is currently unused
+			uint16 ticsremaining = atoul(row[5]);
+			uint16 counters = atoul(row[6]);
 
-        pi->Buffs[slot_id].spellid = spell_id;
-        pi->Buffs[slot_id].level = caster_level;
-        pi->Buffs[slot_id].player_id = caster_id;
-        pi->Buffs[slot_id].bufftype = 2;	// TODO - don't hardcode this, it can be 4 for reversed effects
+			petinfo.Buffs[slot_id].spellid = spell_id;
+			petinfo.Buffs[slot_id].level = caster_level;
+			petinfo.Buffs[slot_id].player_id = caster_id;
+			petinfo.Buffs[slot_id].bufftype = 2;	// TODO - don't hardcode this, it can be 4 for reversed effects
+			petinfo.Buffs[slot_id].duration = ticsremaining;
+			petinfo.Buffs[slot_id].counters = counters;
+		}
+		else if (pet == 1)
+		{
+			uint32 caster_level = atoi(row[3]);
+			int caster_id = 0;
+			// The castername field is currently unused
+			uint16 ticsremaining = atoul(row[5]);
+			uint16 counters = atoul(row[6]);
 
-        pi->Buffs[slot_id].duration = ticsremaining;
-        pi->Buffs[slot_id].counters = counters;
-    }
+			suspended.Buffs[slot_id].spellid = (uint16)spell_id;
+			suspended.Buffs[slot_id].level = (uint8)caster_level;
+			suspended.Buffs[slot_id].player_id = (uint32)caster_id;
+			suspended.Buffs[slot_id].bufftype = (uint8)2;	// TODO - don't hardcode this, it can be 4 for reversed effects
+			suspended.Buffs[slot_id].duration = ticsremaining;
+			suspended.Buffs[slot_id].counters = counters;
+		}
+		else
+		{
+			continue;
+		}
+	}
 
     query = StringFormat("SELECT `pet`, `slot`, `item_id` "
                         "FROM `character_pet_inventory` "
@@ -2638,22 +2729,26 @@ void ZoneDatabase::LoadPetInfo(Client *client) {
 		return;
 	}
 
-    for(auto& row = results.begin(); row != results.end(); ++row) {
-        uint16 pet = atoi(row[0]);
-		if (pet == 0)
-			pi = petinfo;
-		else if (pet == 1)
-			pi = suspended;
-		else
-			continue;
+	for (auto& row = results.begin(); row != results.end(); ++row) {
+		uint16 pet = atoi(row[0]);
 
 		int slot = atoi(row[1]);
 		if (slot < EQ::invslot::EQUIPMENT_BEGIN || slot > EQ::invslot::EQUIPMENT_END)
             continue;
 
-        pi->Items[slot] = atoul(row[2]);
-    }
-
+			if (pet == 0)
+			{
+				petinfo.Items[slot] = atoi(row[2]);
+			}
+			else if (pet == 1)
+			{
+				suspended.Items[slot] = atoi(row[2]);
+			}
+			else
+			{
+				continue;
+			}
+		}
 }
 
 bool ZoneDatabase::GetFactionData(FactionMods* fm, uint32 class_mod, uint32 race_mod, uint32 deity_mod, int32 faction_id, uint8 texture_mod, uint8 gender_mod, uint32 base_race, bool skip_illusions)

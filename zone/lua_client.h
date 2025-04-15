@@ -158,7 +158,7 @@ public:
 	luabind::object GetScribeableSpells(lua_State* L, uint8 min_level, uint8 max_level);
 	void ScribeSpell(int spell_id, int slot);
 	void ScribeSpell(int spell_id, int slot, bool update_client);
-	uint16 ScribeSpells(uint8 min_level, uint8 max_level);
+	void ScribeSpells(uint8 min_level, uint8 max_level);
 	void UnscribeSpell(int slot);
 	void UnscribeSpell(int slot, bool update_client);
 	void UnscribeSpellAll();
