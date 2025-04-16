@@ -2557,6 +2557,7 @@ void EntityList::UpdateWho(bool iSendFullUpdate)
 {
 	if ((!worldserver.Connected()) || !is_zone_loaded)
 		return;
+
 	uint32 tmpNumUpdates = numclients + 5;
 	ServerPacket* pack = 0;
 	ServerClientListKeepAlive_Struct* sclka = 0;

@@ -1813,7 +1813,9 @@ void Client::WhoAll(Who_All_Struct* whom) {
 void Client::FriendsWho(char *FriendsString) {
 	
 	if (RuleB(RoT, DisableWho)) {
-		return;
+		if (!this->GetGM()) {
+			return;
+		}
 	}
 
 	if (!worldserver.Connected())
@@ -8012,9 +8014,10 @@ void Client::MaxSkills(bool tradeskills)
 			skill_caps.GetSkillCap(GetClass(), s.first, GetLevel()).cap
 			);
 		
-		if (!tradeskills && EQ::skills::IsTradeskill((EQ::skills::SkillType)s.first)) {
+		if (!tradeskills && EQ::skills::IsTradeskill(s.first)) {
 			continue;
 		}
+
 		if (GetSkill(s.first) < current_skill_value) {
 			SetSkill(s.first, current_skill_value);
 		}

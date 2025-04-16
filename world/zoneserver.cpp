@@ -962,6 +962,11 @@ void ZoneServer::HandleMessage(uint16 opcode, const EQ::Net::Packet& p) {
 		whom->wclass = whoall->wclass;
 		whom->wrace = whoall->wrace;
 		whom->guildid = whoall->guildid;
+		if (RuleB(RoT, DisableWho)) {
+			if (whom->gmlookup != 1) {
+				return;
+			}
+		}
 		strcpy(whom->whom, whoall->whom);
 		client_list.SendWhoAll(whoall->fromid, whoall->from, whoall->admin, whom);
 		safe_delete(whom);

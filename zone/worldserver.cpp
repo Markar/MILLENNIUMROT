@@ -414,6 +414,11 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet& p)
 			if (wars && wars->id!=0 && wars->id<0xFFFFFFFF){
 				Client* client = entity_list.GetClientByID(wars->id);
 				if (client) {
+					if (RuleB(RoT, DisableWho)) {
+						if (!client->GetGM()) {
+							break;
+						}
+					}
 					if (pack->size == 58) {//no results
 						client->Message_StringID(Chat::White, WHOALL_NO_RESULTS);
 					}

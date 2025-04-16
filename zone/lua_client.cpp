@@ -1666,7 +1666,7 @@ luabind::scope lua_register_client() {
 		.def("SetClientMaxLevel", (void(Lua_Client::*)(int))& Lua_Client::SetClientMaxLevel)
 		.def("GetClientMaxLevel", (int(Lua_Client::*)(void))& Lua_Client::GetClientMaxLevel)
 		.def("GetSkillTrainLevel", (uint8(Lua_Client::*)(int))& Lua_Client::GetSkillTrainLevel)
-		.def("MaxSkills", (void(Lua_Client::*)(void))& Lua_Client::MaxSkills);
+		.def("MaxSkills", (void(Lua_Client::*)(bool))& Lua_Client::MaxSkills);
 
 }
 

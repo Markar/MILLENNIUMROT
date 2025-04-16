@@ -735,12 +735,15 @@ bool Client::HandleChecksumPacket(const EQApplicationPacket *app)
 	{
 		Checksum_Struct *cs_gm = (Checksum_Struct *)app->pBuffer;
 		uint64 checksum_gm = cs_gm->checksum;
-		Log(Logs::Detail, Logs::WorldServer, "Checksum is disabled for GMs! But its value is here: %lld", checksum_gm);
+		Log(Logs::General, Logs::WorldServer, "Checksum is disabled for GMs! But its value is here: %lld", checksum_gm);
+		Log(Logs::Detail, Logs::Error, "Checksum is disabled for GMs! But its value is here: %lld", checksum_gm);
 		return true;
 	}
 	if (app->size != sizeof(Checksum_Struct)) 
 	{
 		Log(Logs::Detail, Logs::WorldServer, "Checksum packet is BAD!");
+		Log(Logs::Detail, Logs::Error, "Checksum packet is BAD!");
+
 		return false;
 	}
 
@@ -750,6 +753,8 @@ bool Client::HandleChecksumPacket(const EQApplicationPacket *app)
 	if (!RuleB(Quarm, EnableChecksumEnforcement))
 	{
 		Log(Logs::Detail, Logs::WorldServer, "Checksum is disabled! But its value is here: %lld", checksum);
+		Log(Logs::Detail, Logs::Error, "Checksum is disabled! But its value is here: %lld", checksum);
+
 		return true;
 	}
 
@@ -776,27 +781,39 @@ bool Client::HandleChecksumPacket(const EQApplicationPacket *app)
 		if(checksum == 8148330249184697)
 		{
 			Log(Logs::Detail, Logs::WorldServer, "Original Spell Checksum is GOOD!");
+			Log(Logs::Detail, Logs::Error,"Original Spell Checksum is GOOD!");
+
 		}
 		//Hobart's updated file.
 		else if(checksum == 8148329455921329)
 		{
 			Log(Logs::Detail, Logs::WorldServer, "Updated Spell Checksum is GOOD!");
+			Log(Logs::Detail, Logs::Error, "Updated Spell Checksum is GOOD!");
+
 		}
 		else if (checksum == custom_spells_checksum_ll)
 		{
 			Log(Logs::Detail, Logs::WorldServer, "Custom Spells Checksum is GOOD!");
+			Log(Logs::Detail, Logs::Error, "Custom Spells Checksum is GOOD!");
+
 		}
 		else if (checksum == custom_checksum_ll)
 		{
 			Log(Logs::Detail, Logs::WorldServer, "Custom Checksum is GOOD!");
+			Log(Logs::Detail, Logs::Error, "Custom Checksum is GOOD!");
+
 		}
 		else if (checksum == prev_custom_checksum_ll)
 		{
 			Log(Logs::Detail, Logs::WorldServer, "Previous Custom Checksum is GOOD!");
+			Log(Logs::Detail, Logs::Error, "Original Spell Checksum is GOOD!");
+
 		}
 		else
 		{
 			Log(Logs::Detail, Logs::WorldServer, "Checksum is BAD! %lld", checksum);
+			Log(Logs::Detail, Logs::Error, "Checksum is BAD! %lld", checksum);
+
 			return false;
 		}
 	}
@@ -892,7 +909,16 @@ bool Client::HandlePacket(const EQApplicationPacket *app) {
 			}
 			else
 			{
-				Log(Logs::Detail, Logs::Error,"Checksum failed for account: %i. Closing connection.", this->GetAccountID());
+				//Log(Logs::Detail, Logs::Error,"Checksum failed for account: %i. Closing connection.", this->GetAccountID());
+				//eqs->Close();
+				//return false;
+				
+				
+				//Checksum_Struct *cs_gm = (Checksum_Struct *)app->pBuffer;
+				//uint64 checksum_gm = cs_gm->checksum;
+				//Log(Logs::Detail, Logs::Error, "Checksum value is here: %lld", checksum_gm);
+
+				Log(Logs::Detail, Logs::Error, "Checksum failed for account: %i. Closing connection.", this->GetAccountID());
 				eqs->Close();
 				return false;
 			}
