@@ -48,6 +48,8 @@ namespace Mac {
 		}
 
 		//ok, now we have what we need to register.
+		static_cast<RegularOpcodeManager*>(opcodes)->SetOpcode(OP_ChecksumZeal, 0x7B20);
+
 
 		EQStreamInterface::Signature signature;
 		std::string pname;
@@ -75,6 +77,8 @@ namespace Mac {
 		into.RegisterOldPatch(signature, pname.c_str(), &opcodes, &struct_strategy);
 		
 		LogNetcode("[StreamIdentify] Registered patch [{}]", name);
+		Log(Logs::General, Logs::Netcode, "[MAC DEBUG] Mapping OP_ExploreUnknown = {:#06x}", opcodes->EmuToEQ(OP_ExploreUnknown));
+
 	}
 
 	void Reload() 

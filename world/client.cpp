@@ -731,6 +731,7 @@ bool Client::HandleDeleteCharacterPacket(const EQApplicationPacket *app) {
 bool Client::HandleChecksumPacket(const EQApplicationPacket *app)
 {
 
+
 	if (GetClientVersionBit() > EQ::versions::ClientVersionBit::bit_MacPC || GetAdmin() >= 80)
 	{
 		Checksum_Struct *cs_gm = (Checksum_Struct *)app->pBuffer;
@@ -763,35 +764,21 @@ bool Client::HandleChecksumPacket(const EQApplicationPacket *app)
 	std::string custom_checksum_val = "";
 	database.GetVariable(custom_checksum_name, custom_checksum_val);
 
-	std::string prev_custom_checksum_name = "PreviousCustomChecksum";
-	std::string prev_custom_checksum_val = "";
-	database.GetVariable(prev_custom_checksum_name, prev_custom_checksum_val);
+	std::string zeal_custom_checksum_name = "ZealCustomChecksum";
+	std::string zeal_custom_checksum_val = "";
+	database.GetVariable(zeal_custom_checksum_name, zeal_custom_checksum_val);
 
 	std::string custom_spells_checksum_name = "CustomSpellsChecksum";
 	std::string custom_spells_checksum_val = "";
 	database.GetVariable(custom_spells_checksum_name, custom_spells_checksum_val);
 
 	int64 custom_checksum_ll = atoll(custom_checksum_val.c_str());
-	int64 prev_custom_checksum_ll = atoll(prev_custom_checksum_val.c_str());
+	int64 zeal_custom_checksum_ll = atoll(zeal_custom_checksum_val.c_str());
 	int64 custom_spells_checksum_ll = atoll(custom_spells_checksum_val.c_str());
 
 	if(GetClientVersionBit() == EQ::versions::ClientVersionBit::bit_MacPC)
 	{
-		//Pristine spell file. 
-		if(checksum == 8148330249184697)
-		{
-			Log(Logs::Detail, Logs::WorldServer, "Original Spell Checksum is GOOD!");
-			Log(Logs::Detail, Logs::Error,"Original Spell Checksum is GOOD!");
-
-		}
-		//Hobart's updated file.
-		else if(checksum == 8148329455921329)
-		{
-			Log(Logs::Detail, Logs::WorldServer, "Updated Spell Checksum is GOOD!");
-			Log(Logs::Detail, Logs::Error, "Updated Spell Checksum is GOOD!");
-
-		}
-		else if (checksum == custom_spells_checksum_ll)
+		if (checksum == custom_spells_checksum_ll)
 		{
 			Log(Logs::Detail, Logs::WorldServer, "Custom Spells Checksum is GOOD!");
 			Log(Logs::Detail, Logs::Error, "Custom Spells Checksum is GOOD!");
@@ -803,10 +790,10 @@ bool Client::HandleChecksumPacket(const EQApplicationPacket *app)
 			Log(Logs::Detail, Logs::Error, "Custom Checksum is GOOD!");
 
 		}
-		else if (checksum == prev_custom_checksum_ll)
+		else if (checksum == zeal_custom_checksum_ll)
 		{
-			Log(Logs::Detail, Logs::WorldServer, "Previous Custom Checksum is GOOD!");
-			Log(Logs::Detail, Logs::Error, "Original Spell Checksum is GOOD!");
+			Log(Logs::Detail, Logs::WorldServer, "Zeal Custom Checksum is GOOD!");
+			Log(Logs::Detail, Logs::Error, "Zeal Custom Checksum is GOOD!");
 
 		}
 		else
@@ -824,6 +811,11 @@ bool Client::HandleChecksumPacket(const EQApplicationPacket *app)
 bool Client::HandlePacket(const EQApplicationPacket *app) {
 
 	EmuOpcode opcode = app->GetOpcode();
+
+	uint16 eq_opcode = eqs->GetOpcodeManager()->EmuToEQ(opcode);
+	EmuOpcode resolved_emu_opcode = eqs->GetOpcodeManager()->EQToEmu(eq_opcode);
+		
+
 
 	LogPacketClientServer(
 		"[{}] [{:#06x}] Size [{}] {}",
@@ -901,6 +893,7 @@ bool Client::HandlePacket(const EQApplicationPacket *app) {
 			return true;
 		}
 		case OP_ChecksumExe:
+		case OP_ChecksumZeal:
 		case OP_ChecksumSpell:
 		{
 			if(HandleChecksumPacket(app))
@@ -909,15 +902,6 @@ bool Client::HandlePacket(const EQApplicationPacket *app) {
 			}
 			else
 			{
-				//Log(Logs::Detail, Logs::Error,"Checksum failed for account: %i. Closing connection.", this->GetAccountID());
-				//eqs->Close();
-				//return false;
-				
-				
-				//Checksum_Struct *cs_gm = (Checksum_Struct *)app->pBuffer;
-				//uint64 checksum_gm = cs_gm->checksum;
-				//Log(Logs::Detail, Logs::Error, "Checksum value is here: %lld", checksum_gm);
-
 				Log(Logs::Detail, Logs::Error, "Checksum failed for account: %i. Closing connection.", this->GetAccountID());
 				eqs->Close();
 				return false;
@@ -925,9 +909,41 @@ bool Client::HandlePacket(const EQApplicationPacket *app) {
 		}
 		default:
 		{
-			LogNetcode("Received unknown EQApplicationPacket");
-			return true;
-		}
+			Log(Logs::Detail, Logs::Error,
+				"Unknown Packet - Opcode: 0x%04X | Size: %u", app->GetOpcode(), app->size);
+		
+			if (!RuleB(Quarm, EnableChecksumEnforcement)) {
+				Log(Logs::Detail, Logs::Error, "Zeal Checksum enforcement is disabled via rule.");
+				return true;
+			}
+		
+			if (app->size == sizeof(Checksum_Struct)) {
+				Checksum_Struct* cs = (Checksum_Struct*)app->pBuffer;
+				uint64 checksum = cs->checksum;
+		
+				Log(Logs::Detail, Logs::Error,
+					"Potential Zeal Checksum Packet - Raw Checksum Value: %llu", checksum);
+		
+				// Pull expected checksum from database
+				std::string zeal_checksum_val;
+				if (database.GetVariable("ZealCustomChecksum", zeal_checksum_val)) {
+					uint64_t expected = strtoull(zeal_checksum_val.c_str(), nullptr, 10);
+		
+					if (checksum == expected) {
+						Log(Logs::Detail, Logs::Error, "Zeal Checksum matches expected value!");
+						return true;
+					} else {
+						Log(Logs::Detail, Logs::Error, "Zeal Checksum mismatch. Closing connection.");
+						eqs->Close();
+						return false;
+					}
+				} else {
+					Log(Logs::Detail, Logs::Error, "Failed to retrieve ZealCustomChecksum from database.");
+					eqs->Close();
+					return false;
+				}
+			}
+		}	
 	}
 	return true;
 }
