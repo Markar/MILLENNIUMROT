@@ -322,7 +322,9 @@ public:
 	void HandlePVPDeath(const char* killer_name, uint8 killer_level, uint16 killer_race, uint8 killer_class, uint32 killer_zone_id, uint32 infamy_lost = 0, uint32 points = 0, bool is_victim_naked = false);
 	void HandlePVPKill(const char* victim_name, uint8 victim_level, uint16 victim_race, uint8 victim_class, uint32 victim_zone_id, uint32 infamy_gained = 0, uint32 points = 0);
 	void SendPVPStats();
-
+	
+	bool InPvP() { return in_pvp_timer.Enabled(); }
+	inline void StartPvPTimer() { in_pvp_timer.Start(RuleI(RoT, PvPTimer)); }
 	
 
 	void	AI_Init();
@@ -398,7 +400,7 @@ public:
 
 	virtual bool Save() { return Save(0); }
 	bool Save(uint8 iCommitNow); // 0 = delayed, 1=async now, 2=sync now
-	void SavePetInfo();
+	void SavePetInfo(bool bClear = false);
 
 	/* New PP Save Functions */
 	bool SaveCurrency(){ return database.SaveCharacterCurrency(this->CharacterID(), &m_pp); }
@@ -1493,6 +1495,7 @@ private:
 	Timer global_channel_timer;
 	Timer fishing_timer;
 	Timer autosave_timer;
+	Timer in_pvp_timer;
 
 	Timer	proximity_timer;
 	Timer	charm_class_attacks_timer;

@@ -48,6 +48,14 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 	
 	ZoneChange_Struct* zc=(ZoneChange_Struct*)app->pBuffer;
 
+	if(InPvP()) {
+		//Check if in pvp and stop zoning right here
+		GMMove(GetX(), GetY(), GetZ());
+		Message(Chat::Red, "You are in PvP, you cannot zone.");
+		SendZoneCancel(zc);
+		return;
+	}
+
 	uint16 target_zone_id = 0;
 	uint32 target_zone_guild_id = GUILD_NONE;
 	ZonePoint* zone_point = nullptr;

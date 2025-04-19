@@ -451,7 +451,7 @@ void Client::AddEXP(uint32 in_add_exp, uint8 conlevel, Mob* killed_mob, int16 av
 		add_aaxp = 0;
 	}
 
-	if (RuleB(RoT, EnableAAZones)) {
+	if (RuleB(RoT, EnableAAZones) && GetLevel() >= RuleI(Character, MaxExpLevel)) {
 		uint8 MaxAApts = 0;
 		uint32 aaxp = 0;
 		switch (GetZoneID())

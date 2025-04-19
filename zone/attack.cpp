@@ -832,6 +832,13 @@ bool Client::Attack(Mob* other, int hand, int damagePct)
 
 	AddWeaponAttackFatigue(weapon);
 
+	if (other->IsClient()) {
+		other->CastToClient()->StartPvPTimer();
+		CastToClient()->StartPvPTimer();		
+	}
+
+
+
 	// Now figure out damage
 	int damage = 1;
 	uint8 mylevel = GetLevel();
@@ -1075,6 +1082,12 @@ void Client::Damage(Mob* other, int32 damage, uint16 spell_id, EQ::skills::Skill
 	{
 		if (spell_id != SPELL_UNKNOWN)
 		{
+
+			if (other != this) { //self damage shouldnt flag you as PvP
+				other->CastToClient()->StartPvPTimer();
+				CastToClient()->StartPvPTimer();
+			}
+
 			/*
 			int ruleDmg = RuleI(Combat, PvPSpellDmgPct);
 			if (ruleDmg < 1)

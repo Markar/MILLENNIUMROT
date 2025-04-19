@@ -960,6 +960,13 @@ void Client::AI_Process()
 			return;
 		}
 
+		if (!owner && GetTarget()->IsClient()) //we dont want LD players to fight back in PvP (rulegate this)
+		{
+			RemoveFromHateList(this);
+			SetTarget(nullptr);
+			return;
+		}
+
 		bool is_combat_range = IsInCombatRange(GetTarget());
 		if (is_combat_range && IsMoving()) {
 			// this is for mobs that might still be pathing to get LOS

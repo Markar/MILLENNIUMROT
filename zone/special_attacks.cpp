@@ -106,9 +106,14 @@ void Mob::TryBashKickStun(Mob* defender, uint8 skill)
 		return;
 	}
 	
-	// both PC and NPC warrior kicks stun starting at 55
-	if (skill == EQ::skills::SkillKick && ((GetClass() != Class::Warrior && GetClass() != Class::WarriorGM) || GetLevel() < 55))
-		return;
+	// both PC warrior kicks stun starting at RuleI(RoT, WarriorKickStunLevel) | NPCs 
+	if (IsClient()) {
+		if (skill == EQ::skills::SkillKick && ((GetClass() != Class::Warrior && GetClass() != Class::WarriorGM) || GetLevel() < RuleI(RoT, WarriorKickStunLevel)))
+			return;
+	} else {
+		if (skill == EQ::skills::SkillKick && ((GetClass() != Class::Warrior && GetClass() != Class::WarriorGM) || GetLevel() < 55))
+			return;
+	}
 
 	if (skill == EQ::skills::SkillDragonPunch && (!IsClient() || !CastToClient()->HasInstantDisc(skill)))
 		return;

@@ -138,6 +138,7 @@ Client::Client(EQStreamInterface* ieqs) : Mob(
 	global_channel_timer(1000),
 	fishing_timer(8000),
 	autosave_timer(RuleI(Character, AutosaveIntervalS) * 1000),
+	in_pvp_timer(RuleI(RoT, PvPTimer)),
 	m_client_npc_aggro_scan_timer(RuleI(Aggro, ClientAggroCheckIdleInterval)),
 	proximity_timer(ClientProximity_interval),
 	charm_class_attacks_timer(3000),
@@ -209,6 +210,7 @@ Client::Client(EQStreamInterface* ieqs) : Mob(
 	auto_fire = false;
 	runmode = true;
 	linkdead_timer.Disable();
+	in_pvp_timer.Disable();
 	zonesummon_id = 0;
 	zonesummon_guildid = GUILD_NONE;
 	zonesummon_ignorerestrictions = 0;
@@ -917,9 +919,9 @@ bool Client::Save(uint8 iCommitNow) {
 	return true;
 }
 
-void Client::SavePetInfo()
+void Client::SavePetInfo(bool bClear)
 {
-	if (GetPet() && GetPet()->IsNPC()) {
+	if (GetPet() && GetPet()->IsNPC() && !bClear) {
 		NPC* pet = GetPet()->CastToNPC();
 		if (pet)
 		{

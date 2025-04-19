@@ -1087,26 +1087,25 @@ int32 SharedDatabase::DeleteStalePlayerCorpses()
 
 		rows_affected += results.RowsAffected();
 
-		std::string sr_query = StringFormat(
-			"DELETE FROM `character_corpses` WHERE `is_buried` = 1 AND (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(time_of_death)) > %d "
-			"AND NOT time_of_death = 0", (RuleI(Character, CorpseDecayTimeMS) / 1000)*2);
-		 auto sr_results = QueryDatabase(sr_query);
-		 if (!sr_results.Success())
-			 return -1;
+		//std::string sr_query = StringFormat(
+		//	"DELETE FROM `character_corpses` WHERE `is_buried` = 1 AND (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(time_of_death)) > %d "
+		//	"AND NOT time_of_death = 0", (RuleI(Character, CorpseDecayTimeMS) / 1000)*2);
+		 //auto sr_results = QueryDatabase(sr_query);
+		 //if (!sr_results.Success())
+			// return -1;
 
-		rows_affected += sr_results.RowsAffected();
-
+		//rows_affected += sr_results.RowsAffected();
 	}
 	else
 	{
-		std::string query = StringFormat(
-			"DELETE FROM `character_corpses` WHERE (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(time_of_death)) > %d "
-			"AND NOT time_of_death = 0", (RuleI(Character, CorpseDecayTimeMS) / 1000));
-		auto results = QueryDatabase(query);
-		if (!results.Success())
-			return -1;
+		//std::string query = StringFormat(
+		//	"DELETE FROM `character_corpses` WHERE (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(time_of_death)) > %d "
+		//	"AND NOT time_of_death = 0", (RuleI(Character, CorpseDecayTimeMS) / 1000));
+		//auto results = QueryDatabase(query);
+		//if (!results.Success())
+		//	return -1;
 
-		rows_affected += results.RowsAffected();
+		//rows_affected += results.RowsAffected();
 	}
 
 	//if(RuleB(Character, UsePlayerCorpseBackups))

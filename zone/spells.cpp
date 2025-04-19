@@ -4237,6 +4237,10 @@ float Mob::CheckResistSpell(uint8 resist_type, uint16 spell_id, Mob *caster, Mob
 		if (resist_chance > 196) {
 			resist_chance = 196;		// minimum 2% chance for spells to land
 		}
+		if (caster != target) { //detrimental spells that target self like manastone shouldnt flag you as PvP
+			target->CastToClient()->StartPvPTimer();
+			caster->CastToClient()->StartPvPTimer();
+		}			
 	}
 
 	//Finally our roll
