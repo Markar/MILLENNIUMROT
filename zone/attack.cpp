@@ -1083,11 +1083,6 @@ void Client::Damage(Mob* other, int32 damage, uint16 spell_id, EQ::skills::Skill
 		if (spell_id != SPELL_UNKNOWN)
 		{
 
-			if (other != this) { //self damage shouldnt flag you as PvP
-				other->CastToClient()->StartPvPTimer();
-				CastToClient()->StartPvPTimer();
-			}
-
 			/*
 			int ruleDmg = RuleI(Combat, PvPSpellDmgPct);
 			if (ruleDmg < 1)
@@ -1326,6 +1321,8 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 		}
 	}
 
+
+
 	int exploss = 0;
 	Log(Logs::General, Logs::Death, "Fatal blow dealt by %s with %d damage, spell %d, skill %d", killerMob ? killerMob->GetName() : "Unknown", damage, spell, attack_skill);
 
@@ -1359,6 +1356,9 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 	dead = true;
 
 	ClearTimersOnDeath();
+
+
+
 	if (IsHardcore())
 	{
 		if (GetLevel() >= RuleI(Quarm, HardcoreDeathBroadcastLevel))
@@ -1399,7 +1399,7 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 				std::string pvpKilledGuildName = GetGuildName();
 				std::string pvpKillerGuildName = killerMob->CastToClient()->GetGuildName();
 				ProcessPVPDeath(killerMob, spell);
-				worldserver.SendEmoteMessage(0, 0, 15, "[PVP] %s of <%s> has been killed in combat by %s of <%s>!", GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str(), killerMob->GetCleanName(), pvpKillerGuildName.empty() ? " " : pvpKillerGuildName.c_str());
+				worldserver.SendEmoteMessage(0, 0, 15, "[%s] %s of <%s> has been killed in combat by %s of <%s>!", zone->GetLongName(), GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str(), killerMob->GetCleanName(), pvpKillerGuildName.empty() ? " " : pvpKillerGuildName.c_str());
 			}
 			else
 			{
@@ -1473,6 +1473,14 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 			Log(Logs::General, Logs::Death, "%s was killed by an unknown entity. This is possibly due to the pain and suffering bug.", GetName());
 		}
 	}
+
+	uint32 cross_zone_killer_char_id = 0;
+
+	if (cross_zone_killer_char_id > 0)
+		ProcessPVPDeathCrossZone(cross_zone_killer_char_id);
+	// PVP Death in Zone
+	else if (killerMob != nullptr)
+		ProcessPVPDeath(killerMob, spell);
 
 	entity_list.RemoveFromTargets(this);
 	hate_list.RemoveEnt(this);

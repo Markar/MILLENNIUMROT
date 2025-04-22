@@ -1296,6 +1296,7 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 
 	/* If server is PVP by default, make all character set to it. */
 	pp.pvp = database.GetServerType() == 1 ? 1 : 0;
+	pp.PVPInfamy = RuleI(PVP, BaseInfamy) > 0 ? RuleI(PVP, BaseInfamy) : 0;
 
 	// if there's a startzone variable put them in there
 	std::string startzone;

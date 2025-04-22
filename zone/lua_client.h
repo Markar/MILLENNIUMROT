@@ -44,6 +44,7 @@ public:
 	void SetGM(bool v);
 	void SetPVP(bool v);
 	bool GetPVP();
+	bool InPvP();
 	uint32 GetPVPPoints();
 	void SetPVPPoints(uint32 Points);
 	bool GetGM();

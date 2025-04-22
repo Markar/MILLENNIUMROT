@@ -48,20 +48,28 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 	
 	ZoneChange_Struct* zc=(ZoneChange_Struct*)app->pBuffer;
 
-	if(InPvP()) {
-		//Check if in pvp and stop zoning right here
-		GMMove(GetX(), GetY(), GetZ());
-		Message(Chat::Red, "You are in PvP, you cannot zone.");
-		SendZoneCancel(zc);
-		return;
-	}
-
 	uint16 target_zone_id = 0;
 	uint32 target_zone_guild_id = GUILD_NONE;
 	ZonePoint* zone_point = nullptr;
 	//figure out where they are going.
 	//we should never trust the client's logic, however, the client's information coupled with the server's information can help us determine locations they should be going to.
 	//try to figure it out for them.
+
+	if(InPvP() && (zone_mode != GateToBindPoint && zone_mode != EvacToSafeCoords && zone_mode != ZoneToSafeCoords)) {
+		//Check if in pvp and stop zoning right here
+		float org_x, org_y, org_z, org_h;
+		org_x = GetX();
+		org_y = GetY();
+		org_z = GetZ();
+		org_h = GetHeading();
+		SendZoneError(zc, ZoningMessage::ZoneNoMessage);
+		Message(Chat::Red, "You are in PvP, you cannot zone right now. You can zone in %s.", Strings::SecondsToTime(GetPvPTimer(), true).c_str());
+		MovePC(zone->GetZoneID(), m_RewindLocation.x, m_RewindLocation.y, m_RewindLocation.z, org_h);
+		Stun(500, this);
+		return;
+	} else {
+		//send a spawn packet to the next zone so that we're on the otherside...?
+	}
 
 	if(zc->zoneID == 0) {
 		//client dosent know where they are going...
@@ -198,7 +206,6 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 	//we need the value when creating the outgoing packet as well.
 	uint8 ignorerestrictions = zonesummon_ignorerestrictions;
 	zonesummon_ignorerestrictions = 0;
-
 	float dest_x=0, dest_y=0, dest_z=0, dest_h=0;
 	switch(zone_mode) {
 	case EvacToSafeCoords:

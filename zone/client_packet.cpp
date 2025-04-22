@@ -10028,15 +10028,6 @@ void Client::Handle_OP_WhoAllRequest(const EQApplicationPacket *app)
 		Log(Logs::General, Logs::Error, "Wrong size on OP_WhoAll. Got: %i, Expected: %i", app->size, sizeof(Who_All_Struct));
 		return;
 	}
-	Message(Chat::Red, "That is a test message.");
-	if (RuleB(RoT, DisableWho)) {
-		if (this->Admin() != 255) {
-			Message(Chat::Red, "That is not a valid command. Please use /help.");
-			return;
-		} else {
-			Message(Chat::Red, "That is a logging message.");
-		}	
-	}
 
 	Who_All_Struct* whoall = (Who_All_Struct*)app->pBuffer;
 

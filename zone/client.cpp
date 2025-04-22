@@ -139,6 +139,9 @@ Client::Client(EQStreamInterface* ieqs) : Mob(
 	fishing_timer(8000),
 	autosave_timer(RuleI(Character, AutosaveIntervalS) * 1000),
 	in_pvp_timer(RuleI(RoT, PvPTimer)),
+	message_timer(10000),
+	online_infamy(600000),
+	zoning_LD_timer(4000),
 	m_client_npc_aggro_scan_timer(RuleI(Aggro, ClientAggroCheckIdleInterval)),
 	proximity_timer(ClientProximity_interval),
 	charm_class_attacks_timer(3000),
@@ -210,6 +213,7 @@ Client::Client(EQStreamInterface* ieqs) : Mob(
 	auto_fire = false;
 	runmode = true;
 	linkdead_timer.Disable();
+	zoning_LD_timer.Disable();
 	in_pvp_timer.Disable();
 	zonesummon_id = 0;
 	zonesummon_guildid = GUILD_NONE;
@@ -3488,6 +3492,7 @@ void Client::SetLanguageSkill(int langid, int value)
 
 void Client::LinkDead()
 {
+	worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Player: %s has gone linkdead.", GetName());
 	if (GetGroup())
 	{
 		entity_list.MessageGroup(this,true,Chat::Yellow,"%s has gone Linkdead.",GetName());
@@ -8276,6 +8281,23 @@ void Client::HandlePVPKill(const char* victim_name, uint8 victim_level, uint16 v
 	SendPVPStats();
 }
 
+void Client::SendCrossZoneHandlePVPKill(const char* killer_name, const char* victim_name, uint8 victim_level, uint16 victim_race, uint8 victim_class, uint32 victim_zone_id, uint32 points, uint32 infamy_stolen)
+{
+	auto pack = std::unique_ptr<ServerPacket>(new ServerPacket(ServerOP_HandlePVPKill, sizeof(HandlePVPKill_Struct)));
+	auto buf = reinterpret_cast<HandlePVPKill_Struct*>(pack->pBuffer);
+	
+	strn0cpy(buf->killer_name, killer_name, sizeof(buf->killer_name));
+	strn0cpy(buf->victim_name, victim_name, sizeof(buf->victim_name));
+	buf->victim_level = victim_level;
+	buf->victim_race = victim_race;
+	buf->victim_class = victim_class;
+	buf->victim_zone_id = victim_zone_id;
+	buf->points = points;
+	buf->infamy_stolen = infamy_stolen;
+
+	worldserver.SendPacket(pack.get());
+}
+
 
 bool Client::GetCanPoints()
 {
@@ -8506,6 +8528,141 @@ void Client::ProcessPVPDeath(Mob* killer, uint16 spell)
 
 	}
 }
+
+
+void Client::ProcessPVPDeathCrossZone(uint32 killer_charid)
+{
+	bool worth_points = false;
+	uint32 infamy_stolen = 0;
+
+	SetMana(RuleI(PVP, RespawnManaPercent));
+
+	// Get current character data from database
+	Character_PVP_Death killer = database.GetCharacterData(killer_charid);
+	bool shares_guild = killer.guild_id != GUILD_NONE && GuildID() != GUILD_NONE && killer.guild_id == GuildID();
+
+	LogDebug("Client::ProcessPVPDeathCrossZone - killer guild id: [{}] - victim guild id: [{}]", killer.guild_id, GuildID());
+
+	if (killer.char_id != 0 && !shares_guild)
+	{
+		// PVP Zone Lockout
+		//if (zone->GetLockout())
+			//database.SetLockout(CharacterID(), zone->GetZoneID());
+
+		// Determine if victim can be killed for points/kills
+		if (GetCanPoints() && Admin() <= AccountStatus::Guide)
+		{
+			// PVP Point System
+			Client* victim = this;
+			int accountcount = database.SharedAccountCount(killer.Account, victim->AccountID());
+
+			if (accountcount == 0)
+			{
+				infamy_stolen = 0;
+				uint32 pvp_points = 0;
+				std::string killer_point_msg = "";
+				worth_points = true;
+
+				if (PVPLevelDifference(killer.Level))
+				{
+					infamy_stolen = GetInfamyStealAmount(victim);
+					pvp_points = CalculatePVPPoints(killer.Level, killer.Infamy, victim->CastToClient()->GetLevel(), infamy_stolen, infamy_stolen, 1);
+					killer_point_msg = StringFormat("You have earned %d PvP Point(s) and %d PvP Infamy.", pvp_points, infamy_stolen);
+				}
+				else {
+					killer_point_msg = "This player was out of your PvP level range and yielded no points or infamy.";
+				}
+
+				// Record PVP Kills
+				database.RegisterPVPKill(victim, killer.char_id, killer.Name, killer.Level, pvp_points, infamy_stolen);
+				//Client::SendCrossZoneMessage(nullptr, killer.Name, Chat::Yellow, killer_point_msg);
+				SendCrossZoneHandlePVPKill(killer.Name, GetCleanName(), GetLevel(), GetRace(), GetClass(), GetZoneID(), pvp_points, infamy_stolen);
+				HandlePVPDeath(killer.Name, killer.Level, killer.Race, killer.Class, killer.Zone, infamy_stolen, pvp_points, IsCharacterNaked());
+			}
+			else {
+				//Client::SendCrossZoneMessage(nullptr, killer.Name, Chat::Yellow, "You may not earn PVP points or kills for killing characters on accounts you share.");
+			}
+		}
+		else {
+			//Client::SendCrossZoneMessage(nullptr, killer.Name, Chat::Yellow, "You may not earn PVP points for killing recently killed players.");
+		}
+
+		//SendGlobalPVPKillMessage(killer.guild_id, killer.Name, GetPlayerClassName(killer.Class, killer.Level), zone->GetLongName(), worth_points, infamy_stolen, 1);
+		//Bring in our global pvp kill message soon
+	}
+}
+
+/*void Client::SendCrossZoneMessage(Client* client, const std::string& character_name, uint16_t chat_type, const std::string& message)
+{
+	// if client is null, falls back to sending a cross zone message by name
+	if (!client && !character_name.empty())
+	{
+		client = entity_list.GetClientByName(character_name.c_str());
+	}
+
+	if (client)
+	{
+		client->Message(chat_type, message.c_str());
+	}
+	else if (!character_name.empty() && !message.empty())
+	{
+		uint32_t pack_size = sizeof(CZMessage_Struct);
+		auto pack = std::make_unique<ServerPacket>(ServerOP_CZMessage, pack_size);
+		auto buf = reinterpret_cast<CZMessage_Struct*>(pack->pBuffer);
+		uint8 update_type = CZUpdateType_Character;
+		int update_identifier = 0;
+		buf->update_type = update_type;
+		buf->update_identifier = update_identifier;
+		buf->type = chat_type;
+		strn0cpy(buf->message, message.c_str(), sizeof(buf->message));
+		strn0cpy(buf->client_name, character_name.c_str(), sizeof(buf->client_name));
+
+		worldserver.SendPacket(pack.get());
+	}
+}*/
+
+/*
+void Client::SendCrossZoneMessageString(
+	Client* client, const std::string& character_name, uint16_t chat_type,
+	uint32_t string_id, const std::initializer_list<std::string>& arguments)
+{
+	// if client is null, falls back to sending a cross zone message by name
+	if (!client && !character_name.empty()) // double check client isn't in this zone
+	{
+		client = entity_list.GetClientByName(character_name.c_str());
+	}
+
+	if (!client && character_name.empty())
+	{
+		return;
+	}
+
+	SerializeBuffer argument_buffer;
+	for (const auto& argument : arguments)
+	{
+		argument_buffer.WriteString(argument);
+	}
+
+	uint32_t args_size = static_cast<uint32_t>(argument_buffer.size());
+	uint32_t pack_size = sizeof(CZClientMessageString_Struct) + args_size;
+	auto pack = std::make_unique<ServerPacket>(ServerOP_CZClientMessageString, pack_size);
+	auto buf = reinterpret_cast<CZClientMessageString_Struct*>(pack->pBuffer);
+	buf->string_id = string_id;
+	buf->chat_type = chat_type;
+	strn0cpy(buf->client_name, character_name.c_str(), sizeof(buf->client_name));
+	buf->args_size = args_size;
+	memcpy(buf->args, argument_buffer.buffer(), argument_buffer.size());
+
+	if (client)
+	{
+		client->MessageString(buf);
+	}
+	else
+	{
+		worldserver.SendPacket(pack.get());
+	}
+}*/
+
 
 
 void Client::AddPVPPoints(uint32 Points)

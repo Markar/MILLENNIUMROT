@@ -318,13 +318,17 @@ public:
 	void AddPVPPoints(uint32 Points);
 	void AddPVPInfamy(uint32 Infamy);
 	void ProcessPVPDeath(Mob* killer, uint16 spell);
+	void ProcessPVPDeathCrossZone(uint32 killer_charid);
+
 	uint32 GetInfamyStealAmount(Client* victim);
 	void HandlePVPDeath(const char* killer_name, uint8 killer_level, uint16 killer_race, uint8 killer_class, uint32 killer_zone_id, uint32 infamy_lost = 0, uint32 points = 0, bool is_victim_naked = false);
 	void HandlePVPKill(const char* victim_name, uint8 victim_level, uint16 victim_race, uint8 victim_class, uint32 victim_zone_id, uint32 infamy_gained = 0, uint32 points = 0);
+	void SendCrossZoneHandlePVPKill(const char* killer_name, const char* victim_name, uint8 victim_level, uint16 victim_race, uint8 victim_class, uint32 victim_zone_id, uint32 points, uint32 infamy_stolen);
 	void SendPVPStats();
 	
 	bool InPvP() { return in_pvp_timer.Enabled(); }
-	inline void StartPvPTimer() { in_pvp_timer.Start(RuleI(RoT, PvPTimer)); }
+	uint32 GetPvPTimer() { return in_pvp_timer.GetRemainingTime(); }
+	inline void StartPvPTimer() { in_pvp_timer.Start(RuleI(RoT, PvPTimer)); Message(Chat::Yellow, "You are now flagged as in PvP."); }
 	
 
 	void	AI_Init();
@@ -1119,6 +1123,8 @@ public:
 
 	int GetAggroCount();
 
+
+
 	void CheckEmoteHail(NPC* n, const char* message);
 
 	void SummonAndRezzAllCorpses();
@@ -1496,6 +1502,9 @@ private:
 	Timer fishing_timer;
 	Timer autosave_timer;
 	Timer in_pvp_timer;
+	Timer message_timer;
+	Timer online_infamy;
+	Timer zoning_LD_timer;
 
 	Timer	proximity_timer;
 	Timer	charm_class_attacks_timer;

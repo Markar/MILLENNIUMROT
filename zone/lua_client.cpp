@@ -1415,6 +1415,12 @@ void Lua_Client::MaxSkills(bool tradeskills)
 	self->MaxSkills(tradeskills);
 }
 
+bool Lua_Client::InPvP()
+{
+	Lua_Safe_Call_Bool();
+	return self->InPvP();
+}
+
 luabind::scope lua_register_client() {
 	return luabind::class_<Lua_Client, Lua_Mob>("Client")
 		.def(luabind::constructor<>())
@@ -1666,7 +1672,8 @@ luabind::scope lua_register_client() {
 		.def("SetClientMaxLevel", (void(Lua_Client::*)(int))& Lua_Client::SetClientMaxLevel)
 		.def("GetClientMaxLevel", (int(Lua_Client::*)(void))& Lua_Client::GetClientMaxLevel)
 		.def("GetSkillTrainLevel", (uint8(Lua_Client::*)(int))& Lua_Client::GetSkillTrainLevel)
-		.def("MaxSkills", (void(Lua_Client::*)(bool))& Lua_Client::MaxSkills);
+		.def("MaxSkills", (void(Lua_Client::*)(bool))& Lua_Client::MaxSkills)
+		.def("InPvP", (bool(Lua_Client::*)())&Lua_Client::InPvP);
 
 }
 
