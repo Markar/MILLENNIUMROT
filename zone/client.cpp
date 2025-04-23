@@ -3492,7 +3492,7 @@ void Client::SetLanguageSkill(int langid, int value)
 
 void Client::LinkDead()
 {
-	worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Player: %s has gone linkdead.", GetName());
+	//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Player: %s has gone linkdead.", GetName());
 	if (GetGroup())
 	{
 		entity_list.MessageGroup(this,true,Chat::Yellow,"%s has gone Linkdead.",GetName());

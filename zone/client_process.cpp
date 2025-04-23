@@ -61,16 +61,16 @@ extern EntityList entity_list;
 bool Client::Process() {
 	bool ret = true;
 
-	switch(conn_state)
+	/*switch(conn_state)
 	{
 	case ZoneInfoSent:
 	case ClientSpawnRequested:
 	case ZoneContentsSent:
 	case PlayerProfileLoaded:
 		{
-			worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "PlayerProfileLoaded, spawning them in LD and sending data conn state: %i.", conn_state);
+			//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "PlayerProfileLoaded, spawning them in LD and sending data conn state: %i.", conn_state);
 			if (client_state == CLIENT_LINKDEAD) {
-				worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "PlayerProfileLoaded, They are LD! spawning them in LD and sending data conn state: %i.", conn_state);
+			//	worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "PlayerProfileLoaded, They are LD! spawning them in LD and sending data conn state: %i.", conn_state);
 			}
 			break;
 		}
@@ -79,7 +79,7 @@ bool Client::Process() {
 
 	if (client_state == ZONING || client_state == PREDISCONNECTED || client_state == DISCONNECTED || client_state == CLIENT_ERROR)
 	{
-		worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Player is attempting to plug, spawning them in LD and sending data client state: %i.", client_state);
+		//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Player is attempting to plug, spawning them in LD and sending data client state: %i.", client_state);
 		EQApplicationPacket *outapp = new EQApplicationPacket();
 		CreateSpawnPacket(outapp);
 		outapp->priority = 6;
@@ -95,13 +95,13 @@ bool Client::Process() {
 	if (zoning) {
 		zoning_LD_timer.Enable();
 		zoning_LD_timer.Start(1000);
-		worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Zoning. %i", client_state);
+		//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Zoning. %i", client_state);
 	}
 
 	if (zoning_LD_timer.Check()) {
 		if (IsLD()) {
 			linkdead_timer.Start(RuleI(Zone,ClientLinkdeadMS));
-			worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Zoning, hes LD. %i", client_state);
+			//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Zoning, hes LD. %i", client_state);
 
 			EQApplicationPacket *outapp = new EQApplicationPacket();
 			CreateSpawnPacket(outapp);
@@ -112,13 +112,13 @@ bool Client::Process() {
 			SendAppearancePacket(AppearanceType::Linkdead, 1);	
 			//zoning_LD_timer.Disable();
 		} else {
-			worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Zoning, not LD. %i", client_state);
+			//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Zoning, not LD. %i", client_state);
 		}
-	}
+	}*/
 
 	if (linkdead_timer.Check())
 	{
-		worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "LD timer %i.", client_state);
+		//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "LD timer %i.", client_state);
 		if (ClientDataLoaded())
 		{
 			Raid *myraid = entity_list.GetRaidByClient(this);
@@ -136,12 +136,18 @@ bool Client::Process() {
 	if(ClientDataLoaded() && (Connected() || IsLD()))
 	{
 		// try to send all packets that weren't sent before, runs all the time
-		if(zoneinpacket_timer.Check())
+		
+		// try to send all packets that weren't sent before
+		if(!IsLD() && zoneinpacket_timer.Check())
+		{
+			SendAllPackets();
+		}
+		/*if(zoneinpacket_timer.Check())
 		{
 			if (!IsLD()) {
 				SendAllPackets();
 			} else {
-				worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Player is attempting to plug...");
+				//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Player is attempting to plug...");
 				EQApplicationPacket *outapp = new EQApplicationPacket();
 				CreateSpawnPacket(outapp);
 				outapp->priority = 6;
@@ -153,7 +159,7 @@ bool Client::Process() {
 				linkdead_timer.Start(RuleI(Zone,ClientLinkdeadMS));
 			}
 			
-		}
+		}*/
 
 		//Accidental falling timer.
 		if (accidentalfall_timer.Enabled())
@@ -201,6 +207,13 @@ bool Client::Process() {
 			DoHPRegen();
 		}
 
+		if (online_infamy.Check()) {
+			if (GetPVPInfamy() < 1000) {
+				AddPVPInfamy(1);
+			}
+			online_infamy.Start();
+		}
+
 		if(mana_timer.Check())
 			SendManaUpdatePacket();
 
@@ -243,7 +256,7 @@ bool Client::Process() {
 			camp_desktop = false;
 		}
 
-		/*if (client_ld_timer.Check())
+		if (client_ld_timer.Check())
 		{
 			if (IsGrouped())
 				LeaveGroup();
@@ -257,7 +270,7 @@ bool Client::Process() {
 			Save();
 			instalog = true;
 			database.ClearAccountActive(this->AccountID());
-		}*/
+		}
 
 		if (IsStunned() && stunned_timer.Check()) {
 			this->stunned = false;
@@ -641,9 +654,9 @@ bool Client::Process() {
 		return false;
 	}
 
-	if (client_state != CLIENT_LINKDEAD && !eqs->CheckState(ESTABLISHED)) {
+	/*if (client_state != CLIENT_LINKDEAD && !eqs->CheckState(ESTABLISHED)) {
 		OnDisconnect(true);
-		worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Player is attempting to plug...");
+		//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Player is attempting to plug...");
 		if (GetGM()) {
 			return false;
 		}
@@ -655,7 +668,7 @@ bool Client::Process() {
 			//SendAppearancePacket(AT_Linkdead, 1);
 			client_state = CLIENT_LINKDEAD;
 		}
-	}
+	}*/
 
 	if (client_state == CLIENT_WAITING_FOR_AUTH || client_state == CLIENT_AUTH_RECEIVED) {
 		if (get_auth_timer.Check()) {
@@ -748,7 +761,7 @@ bool Client::Process() {
 				}
 			}
 			OnDisconnect(false);
-			//return false;
+			return false;
 		}
 		else
 		{
@@ -769,8 +782,8 @@ bool Client::Process() {
 
 /* Just a set of actions preformed all over in Client::Process */
 void Client::OnDisconnect(bool hard_disconnect) {
-	zoning_LD_timer.Start(1000);
-	worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Client Disconnected. In zoneid: %i", this->GetZoneID());
+	//zoning_LD_timer.Start(1000);
+	//worldserver.SendEmoteMessage(0, 0, 0, Chat::Red, "Client Disconnected. In zoneid: %i", this->GetZoneID());
 	database.CharacterQuit(this->CharacterID());
 	if(hard_disconnect)
 	{
