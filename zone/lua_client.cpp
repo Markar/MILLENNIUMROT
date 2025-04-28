@@ -419,6 +419,10 @@ int Lua_Client::GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 race, uint
 	return static_cast<int>(self->GetFactionLevel(char_id, npc_id, race, class_, deity, faction, npc));
 }
 
+int Lua_Client::GetFactionValue(Lua_NPC npc) {
+	Lua_Safe_Call_Int();
+	return static_cast<int>(self->GetFactionValue(npc));
+}
 
 void Lua_Client::SetFactionLevel(uint32 char_id, uint32 npc_id) {
 	Lua_Safe_Call_Void();
@@ -1491,6 +1495,7 @@ luabind::scope lua_register_client() {
 		.def("MovePC", (void(Lua_Client::*)(int,float,float,float,float))&Lua_Client::MovePC)
 		.def("ChangeLastName", (void(Lua_Client::*)(const char *in))&Lua_Client::ChangeLastName)
 		.def("GetFactionLevel", (int(Lua_Client::*)(uint32,uint32,uint32,uint32,uint32,uint32,Lua_NPC))&Lua_Client::GetFactionLevel)
+		.def("GetFactionValue", (int(Lua_Client::*)(Lua_NPC))&Lua_Client::GetFactionValue)
 		.def("SetFactionLevel", (void(Lua_Client::*)(uint32,uint32))&Lua_Client::SetFactionLevel)
 		.def("SetFactionLevel2", (void(Lua_Client::*)(uint32,int,int,int))&Lua_Client::SetFactionLevel2)
 		.def("GetRawItemAC", (int(Lua_Client::*)(void))&Lua_Client::GetRawItemAC)

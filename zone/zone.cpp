@@ -3184,4 +3184,95 @@ void Zone::SendDiscordMessage(const std::string& webhook_name, const std::string
 	}
 }
 
+bool Zone::IsLevelAchievement(uint16 level, uint16 playerclass, uint16 race) 
+ { 
+ 
+     std::string query = StringFormat("SELECT level, class, race FROM level_log WHERE level=%i AND class=%i AND race=%i", level, playerclass, race);
+     auto results = database.QueryDatabase(query);
+ 
+     if (results.RowCount() == 0)
+         return true;
+ 
+     if (results.RowCount() == 1)
+     	return false;
+ 
+ 	return false; //In case theres some mixup with the query (there shouldn't be) dont do a achieve
+ 
+ }//MAYBE dont do this in zone? Not sure what the downsides are...? Gangsta
+ 
+ 
+ void Zone::DoLevelAchievement(Client* client) 
+ {
+	uint8 g_id = 0;
+
+	if (client->GuildID() != GUILD_NONE) {
+		g_id = client->GuildID();
+	}
+
+	std::string query = StringFormat("INSERT INTO level_log (name, char_id, guild_id, level, class, race) VALUES ('%s', %i, %i, %i, %i, %i)", client->GetCleanName(), client->GetID(), g_id, client->GetLevel(), client->GetClass(), client->GetRace());
+	auto results = database.QueryDatabase(query);
+
+	std::string guildname = "";
+
+	if (g_id != 0) {
+		guildname = guild_mgr.GetGuildNameByID(g_id);
+	}
+ 
+ 	std::string classname = GetClassIDName(client->GetClass(), 0);
+ 
+ 	std::string racename = GetPlayerRaceName(client->GetRace());
+ 
+     if (!results.Success())
+         //error logging
+         return;
+     if (results.Success())
+ 		//success logging
+ 		worldserver.SendEmoteMessage(0, 0, AccountStatus::Player, Chat::Broadcasts, "[Achievement] Congratulations to %s <%s> on becoming the first level %i %s %s!", client->GetCleanName(), guildname.c_str(), client->GetLevel(), racename.c_str(), classname.c_str());
+ 		return;
+ 
+ 
+ } //add the level event, spit out the achievement //MAYBE dont do this in zone? Not sure what the downsides are...? Gangsta
+
+bool Zone::IsKillAchievement(uint32 npcid) 
+ { 
+ 
+     std::string query = StringFormat("SELECT id FROM kill_firsts WHERE id=%i", npcid);
+     auto results = database.QueryDatabase(query);
+ 
+     if (results.RowCount() == 0)
+         return true;
+ 
+     if (results.RowCount() == 1)
+     	return false;
+ 
+ 	return false; //In case theres some mixup with the query (there shouldn't be) dont do an achievement
+ 
+ }
+ 
+ void Zone::DoKillAchievement(uint32 npcid, std::string name, uint32 charid, uint32 guild_id, std::string mobname)
+ {
+	uint8 g_id = 0;
+
+	if (guild_id != GUILD_NONE) {
+		g_id = guild_id;
+	}
+
+ 	std::string query = StringFormat("INSERT INTO kill_firsts (id, name, char_id, guild_id, mob_name) VALUES (%i, '%s', %i, '%s', '%s')", npcid, name, charid, g_id, mobname);
+     auto results = database.QueryDatabase(query);
+
+	std::string guildname = "";
+
+	if (g_id != 0) {
+		guildname = guild_mgr.GetGuildNameByID(g_id);
+	}
+ 
+     if (!results.Success())
+         //error logging
+         return;
+     if (results.Success())
+ 		//success logging
+ 		worldserver.SendEmoteMessage(0, 0, AccountStatus::Player, Chat::Broadcasts, "[Achievement] Congratulations to %s <%s> on becoming the first slayer of %s!", name, guildname.c_str(), mobname);
+	return;
+ }
+
 #include "zone_loot.cpp"

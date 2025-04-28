@@ -62,6 +62,8 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 		org_y = GetY();
 		org_z = GetZ();
 		org_h = GetHeading();
+		InterruptSpell(SPELL_UNKNOWN, true); //if the porter is porting then they get bugged, this fixes that...? DOesnt
+		SendSpellBarEnable(0);
 		SendZoneError(zc, ZoningMessage::ZoneNoMessage);
 		Message(Chat::Red, "You are in PvP, you cannot zone right now. You can zone in %s.", Strings::SecondsToTime(GetPvPTimer(), true).c_str());
 		MovePC(zone->GetZoneID(), m_RewindLocation.x, m_RewindLocation.y, m_RewindLocation.z, org_h);

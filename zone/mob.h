@@ -230,6 +230,8 @@ public:
 	virtual int32 GetActSpellCasttime(uint16 spell_id, int32 casttime);
 	float CheckResistSpell(uint8 resist_type, uint16 spell_id, Mob *caster, Mob *target = nullptr, bool use_resist_override = false,
 		int resist_override = 0, bool tick_save = false);
+	float CheckPvPResistSpell(uint8 resist_type, uint16 spell_id, Mob *caster, Mob *target = nullptr, bool use_resist_override = false,
+		int resist_override = 0, bool tick_save = false);
 	int ResistPhysical(int level_diff, uint8 caster_level);
 	uint16 GetSpecializeSkillValue(uint16 spell_id);
 	void SendSpellBarEnable(uint16 spellid);

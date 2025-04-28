@@ -456,7 +456,7 @@ struct SpellBuff_Struct
 	/*008*/ uint16	duration;
 	/*012*/	uint16	counters;
 	/*016*/	uint32	player_id;	//'global' ID of the caster, for wearoff messages, not part of client struct, just in this internal emu struct
-	/*020*/
+	/*020*/	uint32	caster_char_id; // caster ID, not part of client struct, just in this internal emu struct
 };
 
 struct SpellBuffFade_Struct {
@@ -479,7 +479,7 @@ struct SpellBuffFade_Struct {
 	// 3 = replace/update buff.  client replaces the buff in 'slot_number' field
 	// 0 or anything else = replace/update buff by spell id and bufftype match
 	/*016*/	uint32	bufffade;
-	/*020*/ 
+	/*020*/ uint32	caster_char_id; // caster ID, not part of client struct, just in this internal emu struct
 };
 
 struct GMTrainee_Struct{

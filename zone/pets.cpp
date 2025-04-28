@@ -709,6 +709,7 @@ void NPC::GetPetState(SpellBuff_Struct *pet_buffs, uint32 *items, char *name) {
 	//save their buffs.
 	for (int i=0; i < GetPetMaxTotalSlots(); i++) {
 		if (buffs[i].spellid != SPELL_UNKNOWN) {
+			pet_buffs[i].caster_char_id = buffs[i].caster_char_id;
 			pet_buffs[i].bufftype = 2; // TODO - don't hardcode this, it can be 4 for reversed effects
 			pet_buffs[i].level = buffs[i].casterlevel;
 			pet_buffs[i].bard_modifier = buffs[i].instrumentmod;
@@ -719,6 +720,7 @@ void NPC::GetPetState(SpellBuff_Struct *pet_buffs, uint32 *items, char *name) {
 			pet_buffs[i].player_id = buffs[i].casterid;
 		}
 		else {
+			pet_buffs[i].caster_char_id = 0;
 			pet_buffs[i].bufftype = 0;
 			pet_buffs[i].level = 0;
 			pet_buffs[i].bard_modifier = 0;
@@ -764,6 +766,7 @@ void NPC::SetPetState(SpellBuff_Struct *pet_buffs, uint32 *items) {
 			pet_buffs[i].duration = 0;
 			pet_buffs[i].counters = 0;
 			pet_buffs[i].player_id = 0;
+			pet_buffs[i].caster_char_id = 0;
 		}
 	}
 	for (int j1=0; j1 < GetPetMaxTotalSlots(); j1++) {

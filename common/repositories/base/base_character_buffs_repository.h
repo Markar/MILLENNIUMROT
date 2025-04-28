@@ -32,6 +32,7 @@ public:
 		int32_t     ExtraDIChance;
 		uint8_t     bard_modifier;
 		int32_t     bufftype;
+		int32_t		caster_char_id;
 	};
 
 	static std::string PrimaryKey()
@@ -55,6 +56,7 @@ public:
 			"ExtraDIChance",
 			"bard_modifier",
 			"bufftype",
+			"caster_char_id",
 		};
 	}
 
@@ -74,6 +76,7 @@ public:
 			"ExtraDIChance",
 			"bard_modifier",
 			"bufftype",
+			"caster_char_id",
 		};
 	}
 
@@ -127,6 +130,7 @@ public:
 		e.ExtraDIChance = 0;
 		e.bard_modifier = 10;
 		e.bufftype      = 0;
+		e.caster_char_id= 0;
 
 		return e;
 	}
@@ -176,6 +180,7 @@ public:
 			e.ExtraDIChance = row[10] ? static_cast<int32_t>(atoi(row[10])) : 0;
 			e.bard_modifier = row[11] ? static_cast<uint8_t>(strtoul(row[11], nullptr, 10)) : 10;
 			e.bufftype      = row[12] ? static_cast<int32_t>(atoi(row[12])) : 0;
+			e.caster_char_id= row[13] ? static_cast<int32_t>(atoi(row[13])) : 0;
 
 			return e;
 		}
@@ -222,6 +227,7 @@ public:
 		v.push_back(columns[10] + " = " + std::to_string(e.ExtraDIChance));
 		v.push_back(columns[11] + " = " + std::to_string(e.bard_modifier));
 		v.push_back(columns[12] + " = " + std::to_string(e.bufftype));
+		v.push_back(columns[13] + " = " + std::to_string(e.caster_char_id));
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -256,6 +262,7 @@ public:
 		v.push_back(std::to_string(e.ExtraDIChance));
 		v.push_back(std::to_string(e.bard_modifier));
 		v.push_back(std::to_string(e.bufftype));
+		v.push_back(std::to_string(e.caster_char_id));
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -298,6 +305,7 @@ public:
 			v.push_back(std::to_string(e.ExtraDIChance));
 			v.push_back(std::to_string(e.bard_modifier));
 			v.push_back(std::to_string(e.bufftype));
+			v.push_back(std::to_string(e.caster_char_id));
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
 		}
@@ -344,6 +352,7 @@ public:
 			e.ExtraDIChance = row[10] ? static_cast<int32_t>(atoi(row[10])) : 0;
 			e.bard_modifier = row[11] ? static_cast<uint8_t>(strtoul(row[11], nullptr, 10)) : 10;
 			e.bufftype      = row[12] ? static_cast<int32_t>(atoi(row[12])) : 0;
+			e.caster_char_id= row[13] ? static_cast<int32_t>(atoi(row[13])) : 0;
 
 			all_entries.push_back(e);
 		}
@@ -381,6 +390,7 @@ public:
 			e.ExtraDIChance = row[10] ? static_cast<int32_t>(atoi(row[10])) : 0;
 			e.bard_modifier = row[11] ? static_cast<uint8_t>(strtoul(row[11], nullptr, 10)) : 10;
 			e.bufftype      = row[12] ? static_cast<int32_t>(atoi(row[12])) : 0;
+			e.caster_char_id= row[13] ? static_cast<int32_t>(atoi(row[13])) : 0;
 
 			all_entries.push_back(e);
 		}

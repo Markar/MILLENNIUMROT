@@ -712,6 +712,11 @@ static constexpr float ClassicEQEraFloat = 0.0f;
 
 static const uint32 MAX_SPELL_DB_ID_VAL = 65535;
 
+//factions
+static const uint32 DB_FACTION_GEM_CHOPPERS = 255;
+static const uint32 DB_FACTION_HERETICS = 265;
+static const uint32 DB_FACTION_KING_AKANON = 333;
+
 enum ChatChannelNames : uint16
 {
 	ChatChannel_Guild = 0,

@@ -352,13 +352,15 @@ bool Client::Process() {
 		}
 
 		if(in_pvp_timer.Check()) {
+			last_attack_character_id = 0;
+			pvp_damage_taken = 0;
 			in_pvp_timer.Disable();
-			Message(Chat::Yellow, "You are no longer lagged as in PvP.");
+			Message(Chat::Yellow, "You are no longer flagged as in PvP.");
 		}
 
 		if(message_timer.Check()) { //sends messages we want to send (RoT)
 			if (InPvP()) {
-				Message(Chat::Yellow, "You are flagged for PvP. %s remaing.", Strings::SecondsToTime(GetPvPTimer(), true).c_str());
+				Message(Chat::Yellow, "You are flagged for PvP. %s remaining.", Strings::SecondsToTime(GetPvPTimer(), true).c_str());
 			}
 		}
 
@@ -451,11 +453,7 @@ bool Client::Process() {
 				{
 					Attack(auto_attack_target, EQ::invslot::slotPrimary);
 
-					// Triple attack: Warriors and Monks level 60+ do this.  13.5% looks weird but multiple 8+ hour logs suggest it's about that
-					if ((GetClass() == Class::Warrior || GetClass() == Class::Monk) && GetLevel() >= 60 && zone->random.Int(0, 999) < 135)
-					{
-						Attack(auto_attack_target, EQ::invslot::slotPrimary);
-
+					if (RuleB(RoT, DoubleAttackFlurry)) {
 						// Flurry AA
 						if (auto_attack_target && aabonuses.FlurryChance)
 						{
@@ -468,6 +466,28 @@ bool Client::Process() {
 									Attack(auto_attack_target, EQ::invslot::slotPrimary);
 							}
 						}
+					}
+
+					// Triple attack: Warriors and Monks level 60+ do this.  13.5% looks weird but multiple 8+ hour logs suggest it's about that
+					if ((GetClass() == Class::Warrior || GetClass() == Class::Monk) && GetLevel() >= 60 && zone->random.Int(0, 999) < 135)
+					{
+						Attack(auto_attack_target, EQ::invslot::slotPrimary);
+						
+						if (!RuleB(RoT, DoubleAttackFlurry)) {
+							// Flurry AA
+							if (auto_attack_target && aabonuses.FlurryChance)
+							{
+								if (zone->random.Int(0, 99) < aabonuses.FlurryChance)
+								{
+									Message_StringID(Chat::Yellow, YOU_FLURRY);
+									Attack(auto_attack_target, EQ::invslot::slotPrimary);
+
+									if (zone->random.Roll(10))							// flurry is usually only +1 swings
+										Attack(auto_attack_target, EQ::invslot::slotPrimary);
+								}
+							}
+						}
+
 					}
 
 					// Punishing Blade and Speed of the Knight AAs

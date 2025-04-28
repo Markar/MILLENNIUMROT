@@ -4971,7 +4971,9 @@ FACTION_VALUE Client::GetReverseFactionCon(Mob* iOther, bool ignore_feign_death)
 			} else {
 				return FACTION_DUBIOUSLY;
 			}
-		}		
+		} else {
+			return FACTION_INDIFFERENTLY;
+		}	
 	}
 
 
@@ -5014,7 +5016,9 @@ FACTION_VALUE Client::GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 p_ra
 			} else {
 				return FACTION_DUBIOUSLY;
 			}
-		}		
+		} else {
+			return FACTION_INDIFFERENTLY;
+		}			
 	}
 
 
@@ -5110,6 +5114,56 @@ FACTION_VALUE Client::GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 p_ra
 		Log(Logs::General, Logs::Debug, "CharID: %i NPC ID: %i P_RACE: %i P_CLASS: %i P_DEITY: %i P_FACTION: %i IGNORE_FEIGN: %i TMP: %i", char_id, npc_id, p_race, p_class, p_deity, pFaction, ignore_feign_death, tmpFactionValue);
 	}
 	return fac;
+}
+
+int16 Client::GetFactionValue(Mob* tnpc)
+{
+	int16 tmpFactionValue;
+	FactionMods fmods;
+
+	if (IsFeigned() || IsInvisible(tnpc)) {
+		return 0;
+	}
+
+	// pets con amiably to owner and indiff to rest
+	if (tnpc && tnpc->GetOwnerID() != 0) {
+		if (tnpc->GetOwner() && tnpc->GetOwner()->IsClient() && CharacterID() == tnpc->GetOwner()->CastToClient()->CharacterID()) {
+			return 100;
+		}
+		else {
+			return 0;
+		}
+	}
+
+	//First get the NPC's Primary faction
+	int32 primary_faction = tnpc->GetPrimaryFaction();
+	if (primary_faction > 0) {
+		//Get the faction data from the database
+		if (database.GetFactionData(&fmods, GetClass(), GetRace(), GetDeity(), primary_faction, GetTexture(), GetGender(), GetBaseRace())) {
+			//Get the players current faction with pFaction
+			tmpFactionValue = GetCharacterFactionLevel(primary_faction);
+			//Tack on any bonuses from Alliance type spell effects
+			tmpFactionValue += GetFactionBonus(primary_faction);
+			tmpFactionValue += GetItemFactionBonus(primary_faction);
+			//Add base mods, GetFactionData() above also accounts for illusions.
+			tmpFactionValue += fmods.base + fmods.class_mod + fmods.race_mod + fmods.deity_mod;
+		}
+	}
+	else {
+		return 0;
+	}
+
+	// merchant fix
+	if (tnpc && tnpc->IsNPC() && tnpc->CastToNPC()->MerchantType && tmpFactionValue <= -501) {
+		return -500;
+	}
+
+	// We're engaged with the NPC and their base is dubious or higher, return threatenly
+	if (tnpc != 0 && tmpFactionValue >= -500 && tnpc->CastToNPC()->CheckAggro(this)) {
+		return -501;
+	}
+
+	return tmpFactionValue;
 }
 
 //Sets the characters faction standing with the specified NPC.
@@ -8104,6 +8158,22 @@ bool Client::CanPvP(Client *c) {
 	return true;
 }
 
+void Client::PlayerDmg(uint32 char_id, uint32 damage)
+{
+	last_attack_character_id = char_id;
+	pvp_damage_taken += damage;
+	StartPvPTimer();
+	//SetAttackedRecentlySideEffects();
+	//rez_timer.Start(RuleI(PVP, RezBoxTimer));
+	//coth_timer.Start(RuleI(PVP, CotHTimer));
+	//pvp_attacked_timer.Start(RuleI(PVP, AttackTimer));
+}
+
+void Client::PlayerDmg(Client* in_mob, uint32 damage)
+{
+	PlayerDmg(in_mob->CharacterID(), damage);
+}
+
 int Client::WorldPVPMinLevel()
 {
 	int rule_min_level = RuleI(PVP, MinLevel);
@@ -8440,7 +8510,7 @@ void Client::ProcessPVPDeath(Mob* killer, uint16 spell)
 								uint32 pvp_points = 0;
 								uint32 infamy_gained = 0;
 
-								if (PVPLevelDifference(group->members[i]->CastToClient()))
+								if (zone->GetFFA() || PVPLevelDifference(group->members[i]->CastToClient()))
 								{
 									infamy_gained = infamy_per_killer;
 
@@ -8488,7 +8558,7 @@ void Client::ProcessPVPDeath(Mob* killer, uint16 spell)
 				}
 				else {
 					uint32 pvp_points = 0;
-					if (PVPLevelDifference(killer->CastToClient()))
+					if (zone->GetFFA() || PVPLevelDifference(killer->CastToClient()))
 					{
 						pvp_points = CalculatePVPPoints(
 							killer->CastToClient()->GetLevel(),
@@ -8529,7 +8599,7 @@ void Client::ProcessPVPDeath(Mob* killer, uint16 spell)
 	}
 }
 
-
+/*
 void Client::ProcessPVPDeathCrossZone(uint32 killer_charid)
 {
 	bool worth_points = false;
@@ -8591,6 +8661,7 @@ void Client::ProcessPVPDeathCrossZone(uint32 killer_charid)
 		//Bring in our global pvp kill message soon
 	}
 }
+*/
 
 /*void Client::SendCrossZoneMessage(Client* client, const std::string& character_name, uint16_t chat_type, const std::string& message)
 {

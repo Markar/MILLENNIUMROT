@@ -164,6 +164,11 @@ public:
 
 	void SetIsHotzone(bool is_hotzone);
 
+	bool 	IsLevelAchievement(uint16 level, uint16 playerclass, uint16 race);
+	bool 	IsKillAchievement(uint32 npcid);
+	void 	DoLevelAchievement(Client* client);
+	void	DoKillAchievement(uint32 npcid, std::string name, uint32 charid, uint32 guild_id, std::string mobname);
+
 	uint32	CountSpawn2();
 	ZonePoint* GetClosestZonePoint(const glm::vec3& location, const char* to_name, Client *client, float max_distance = 40000.0f);
 	ZonePoint* GetClosestZonePoint(const glm::vec3& location, uint32	to, Client *client, float max_distance = 40000.0f);

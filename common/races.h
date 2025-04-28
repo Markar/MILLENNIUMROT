@@ -100,6 +100,7 @@ namespace Gender {
 #define WATER_ELEMENTAL		211
 #define FIRE_ELEMENTAL		212
 #define HORSE				216
+#define VAHSHIRGUARD		239
 #define TELEPORT_MAN		240
 #define MITHANIEL_MARR		296
 #define EMU_RACE_NPC		131069 // was 65533

@@ -451,23 +451,23 @@ void Client::AddEXP(uint32 in_add_exp, uint8 conlevel, Mob* killed_mob, int16 av
 		add_aaxp = 0;
 	}
 
-	if (RuleB(RoT, EnableAAZones) && GetLevel() >= RuleI(Character, MaxExpLevel)) {
+	if (RuleB(RoT, EnableAAZones) && GetLevel() >= 6) {
 		uint8 MaxAApts = 0;
 		uint32 aaxp = 0;
 		switch (GetZoneID())
 		{
 		case Zones::CRUSHBONE:
 		case Zones::BLACKBURROW:
-			MaxAApts = 10;
+			MaxAApts = 1000;
 			break;
 		case Zones::MISTMOORE:
 		case Zones::UNREST:
 		case Zones::NAJENA:
-			MaxAApts = 25;
+			MaxAApts = 1000;
 			break;
 		case Zones::GUKBOTTOM:
 		case Zones::SOLDUNGB:
-			MaxAApts = 200;
+			MaxAApts = 1000;
 			break;
 		default:
 			break;
@@ -869,6 +869,9 @@ void Client::SetLevel(uint8 set_level, bool command)
 
 	if(set_level > m_pp.level) {
 		parse->EventPlayer(EVENT_LEVEL_UP, this, "", 0);
+		if (zone->IsLevelAchievement(set_level, GetClass(), GetBaseRace())) {
+			zone->DoLevelAchievement(this);
+		}
 		/* QS: PlayerLogLevels */
 		if (RuleB(QueryServ, PlayerLogLevels)){
 			std::string event_desc = StringFormat("Leveled UP :: to Level:%i from Level:%i in zoneid:%i", set_level, m_pp.level, this->GetZoneID());

@@ -103,6 +103,7 @@ struct Buffs_Struct {
 	bool	remove_me;
 	bool	first_tic;
 	int32	bufftype;
+	uint32	caster_char_id;
 };
 
 struct StatBonuses {

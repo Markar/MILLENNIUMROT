@@ -2310,6 +2310,7 @@ void ZoneDatabase::SaveBuffs(Client *client) {
 		b.ExtraDIChance		= buffs[index].ExtraDIChance;
 		b.bard_modifier		= buffs[index].instrumentmod;
 		b.bufftype			= buffs[index].bufftype;
+		b.caster_char_id	= buffs[index].caster_char_id;
 
 		// add the buff to the vector
 
@@ -2332,7 +2333,7 @@ void ZoneDatabase::LoadBuffs(Client *client) {
 
 	std::string query = StringFormat("SELECT spell_id, slot_id, caster_level, caster_name, ticsremaining, "
                                     "counters, melee_rune, magic_rune, persistent, "
-                                    "ExtraDIChance, bard_modifier, bufftype "
+                                    "ExtraDIChance, bard_modifier, bufftype, caster_char_id "
                                     "FROM `character_buffs` WHERE `id` = '%u'", client->CharacterID());
     auto results = QueryDatabase(query);
     if (!results.Success()) {
@@ -2358,6 +2359,7 @@ void ZoneDatabase::LoadBuffs(Client *client) {
 		int32 ExtraDIChance = atoul(row[9]);
 		uint8 instmod = atoul(row[10]);
 		int32 bufftype = atoul(row[11]);
+		uint32 caster_char_id = atoul(row[12]);
 
 		buffs[slot_id].spellid = spell_id;
         buffs[slot_id].casterlevel = caster_level;
@@ -2391,6 +2393,7 @@ void ZoneDatabase::LoadBuffs(Client *client) {
 		buffs[slot_id].isdisc = IsDisc(spell_id);
 		buffs[slot_id].instrumentmod = instmod;
 		buffs[slot_id].bufftype = bufftype;
+		buffs[slot_id].caster_char_id = caster_char_id;
 
     }
 
@@ -2699,6 +2702,7 @@ void ZoneDatabase::LoadPetInfo(Client *client) {
 			petinfo.Buffs[slot_id].bufftype = 2;	// TODO - don't hardcode this, it can be 4 for reversed effects
 			petinfo.Buffs[slot_id].duration = ticsremaining;
 			petinfo.Buffs[slot_id].counters = counters;
+			petinfo.Buffs[slot_id].caster_char_id = caster_id;
 		}
 		else if (pet == 1)
 		{
@@ -2714,6 +2718,7 @@ void ZoneDatabase::LoadPetInfo(Client *client) {
 			suspended.Buffs[slot_id].bufftype = (uint8)2;	// TODO - don't hardcode this, it can be 4 for reversed effects
 			suspended.Buffs[slot_id].duration = ticsremaining;
 			suspended.Buffs[slot_id].counters = counters;
+			suspended.Buffs[slot_id].caster_char_id = (uint32)caster_id;
 		}
 		else
 		{

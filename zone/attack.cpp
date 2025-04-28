@@ -832,8 +832,9 @@ bool Client::Attack(Mob* other, int hand, int damagePct)
 
 	AddWeaponAttackFatigue(weapon);
 
-	if (other->IsClient()) {
-		other->CastToClient()->StartPvPTimer();
+	if (other->IsClient() || other->IsPet() && other->GetUltimateOwner()->IsClient()) {
+		Client* combatant = other->IsPet() && other->GetUltimateOwner()->IsClient() ? other->GetOwner()->CastToClient() : ((other->IsClient() ? other->CastToClient() : nullptr));
+		combatant->StartPvPTimer();
 		CastToClient()->StartPvPTimer();		
 	}
 
@@ -845,7 +846,7 @@ bool Client::Attack(Mob* other, int hand, int damagePct)
 	int baseDamage = GetBaseDamage(other, hand);
 
 	if (IsClient()) {
-		baseDamage = baseDamage * RuleI(RoT, PvPBaseDamageMultiplier);
+		baseDamage = baseDamage * RuleR(RoT, PvPBaseDamageMultiplier);
 	}
 	
 
@@ -1027,6 +1028,36 @@ bool Client::Attack(Mob* other, int hand, int damagePct)
 	// If we are this far, this means we are atleast making a swing.
 	other->AddToHateList(this, hate);
 
+
+ 	//Guard Assist Code
+ 	if	(
+		(IsClient() && other->IsClient()) ||
+		(HasOwner() && GetOwner()->IsClient() && other->IsClient())
+	)
+	{
+
+		std::list<Mob*> npcList;
+		entity_list.GetNearestNPCs(this, npcList, GetAssistRange()+50.f, true);
+		Mob* listMob;
+
+		auto iter = npcList.begin();
+		while (iter != npcList.end())
+		{
+			listMob = *iter;
+			if (listMob->IsNPC() && listMob->CastToNPC()->IsGuard())
+			{
+				float distance = Distance(other->CastToClient()->m_Position, listMob->GetPosition());
+				if ((listMob->CheckLosFN(other) || listMob->CheckLosFN(this)) && distance <= 70) {
+					auto petorowner = GetOwnerOrSelf();
+					if (other->GetReverseFactionCon(listMob) <= petorowner->GetReverseFactionCon(listMob)) {
+						listMob->AddToHateList(this);
+					}
+				}
+			}
+			++iter;
+		}
+	}
+
 	///////////////////////////////////////////////////////////
 	////// Send Attack Damage
 	///////////////////////////////////////////////////////////
@@ -1083,18 +1114,18 @@ void Client::Damage(Mob* other, int32 damage, uint16 spell_id, EQ::skills::Skill
 		if (spell_id != SPELL_UNKNOWN)
 		{
 
-			/*
+			
 			int ruleDmg = RuleI(Combat, PvPSpellDmgPct);
 			if (ruleDmg < 1)
 				ruleDmg = 62;
 
 			// lower level spells are less reduced than higher level spells
 			// this scales PvP damage from 91% at level 1 to 62% at level 50
-			PvPMitigation = 91 - spells[spell_id].classes[other->GetClass()-1] * 58 / 100;
+			float PvPMitigation = 91 - spells[spell_id].classes[other->GetClass()-1] * 58 / 100;
 
 			if (PvPMitigation < ruleDmg)
 				PvPMitigation = ruleDmg;
-			*/
+			
 
 			// this spell mitigation part is from a client decompile
 			if (IsValidSpell(spell_id) && (spells[spell_id].goodEffect == 0 || IsLichSpell(spell_id)))
@@ -1200,6 +1231,41 @@ void Client::Damage(Mob* other, int32 damage, uint16 spell_id, EQ::skills::Skill
 	if(!ClientFinishedLoading())
 		damage = DMG_INVUL;
 
+	// PvP last player attacker and PvP timer handling
+	//if (other && other == this && iBuffTic && buffslot >= 0 && buffs[buffslot].caster_char_id > 0 && buffs[buffslot].caster_char_id != CharacterID())
+	//{
+	//	// Cross zone DoT
+	//	Character_PVP_Death caster = database.GetCharacterData(buffs[buffslot].caster_char_id);
+	//	bool shares_guild = caster.guild_id != GUILD_NONE && GuildID() != GUILD_NONE && caster.guild_id == GuildID();
+	////	Group* group = entity_list.GetGroupByClient(this);
+	//	bool shares_group = group != 0 && group->IsGroupMember(caster.Name);
+	//	if (!shares_guild && !shares_group)
+	//		PlayerDmg(buffs[buffslot].caster_char_id, damage);
+	//}
+	/*if ((other && other->IsClient() || (other && other->IsPet() && other->GetOwner()->IsClient())) && other != this)
+	{
+		// In-zone
+		Client* other_client = other->IsPet() && other->GetUltimateOwner()->IsClient() ? other->GetOwner()->CastToClient() : ((other->IsClient() ? other->CastToClient() : nullptr));
+
+		if (other_client)
+		{
+			Group* group = entity_list.GetGroupByClient(other_client);
+			bool shares_group = group != 0 && group->IsGroupMember(this);
+			bool shares_guild = other_client->GuildID() != GUILD_NONE && GuildID() != GUILD_NONE && other_client->GuildID() == GuildID();
+			if (!shares_guild && !shares_group)
+				PlayerDmg(other_client, damage);
+		}
+	}*/
+
+	if ((other && other->IsClient() || (other && other->IsPet() && other->GetUltimateOwner()->IsClient())) && other != this) {
+		// In-zone
+		Client* other_client = other->IsPet() && other->GetUltimateOwner()->IsClient() ? other->GetOwner()->CastToClient() : ((other->IsClient() ? other->CastToClient() : nullptr));
+		if (other_client)
+		{
+			PlayerDmg(other->CastToClient()->CharacterID(), damage);
+		}
+	}
+
 	//do a majority of the work...
 	CommonDamage(other, damage, spell_id, attack_skill, avoidable, buffslot, iBuffTic);
 }
@@ -1288,6 +1354,12 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 
 	if(!spell)
 		spell = SPELL_UNKNOWN;
+
+	//uint32 caster_charid = 0;
+	//if (bufftic && buffslot >= 0)
+	//	caster_charid = buffs[buffslot].caster_charid;
+	//else
+	//	caster_charid = killerMob ? killerMob->GetID() : 0;
 
 	std::string export_string = fmt::format(
 		"{} {} {} {}",
@@ -1389,26 +1461,32 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 		}
 	}
 	bool dueling = IsDueling();
+	bool PvP_processed = false;
 	if (killerMob != nullptr)
 	{
-		if (killerMob->IsClient())
+		Mob* killer = killerMob;
+		if (killerMob != this)
 		{
-			if (killerMob != this)
-			{
+			if (killerMob->IsPet() && killerMob->GetUltimateOwner()->IsClient()) {
+				killer = killerMob->GetOwner();
+			}
+			if (killer->IsClient()) {
+				PvP_processed = true;
 				killedby = Killed_PVP;
 				std::string pvpKilledGuildName = GetGuildName();
-				std::string pvpKillerGuildName = killerMob->CastToClient()->GetGuildName();
-				ProcessPVPDeath(killerMob, spell);
-				worldserver.SendEmoteMessage(0, 0, 15, "[%s] %s of <%s> has been killed in combat by %s of <%s>!", zone->GetLongName(), GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str(), killerMob->GetCleanName(), pvpKillerGuildName.empty() ? " " : pvpKillerGuildName.c_str());
-			}
-			else
-			{
-				killedby = Killed_Self;
-				std::string pvpKilledGuildName = GetGuildName();
-				entity_list.Message(0, 15, "[PVP] %s of <%s> has unalived themselves!", GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str());
+				std::string pvpKillerGuildName = killer->CastToClient()->GetGuildName();
+				ProcessPVPDeath(killer, spell);
+				worldserver.SendEmoteMessage(0, 0, 15, "[%s] %s of <%s> has been killed in combat by %s of <%s>!", zone->GetLongName(), GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str(), killer->GetCleanName(), pvpKillerGuildName.empty() ? " " : pvpKillerGuildName.c_str());				
 			}
 		}
-		else if (killerMob->IsClient() && (dueling || killerMob->CastToClient()->IsDueling())) 
+		else
+		{
+			killedby = Killed_Self;
+			std::string pvpKilledGuildName = GetGuildName();
+			//if ()
+			//entity_list.Message(0, 15, "[PVP] %s of <%s> has unalived themselves!", GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str());
+		}
+		if (killerMob->IsClient() && (dueling || killerMob->CastToClient()->IsDueling())) 
 		{
 			SetDueling(false);
 			SetDuelTarget(0);
@@ -1432,10 +1510,21 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 				}
 			}
 		}
-		else if (killerMob->IsClient())
+		else if (killerMob->IsClient() && killerMob != this)
 		{
-			if(killerMob != this)
+			killedby = Killed_PVP;
+		}
+		else if (!PvP_processed && pvp_damage_taken > (GetMaxHP() * RuleR(Rot, PvPPercantageForKillshot)))
+		{
+			Client* mob = entity_list.GetClientByCharID(last_attack_character_id);
+			if (mob) {
 				killedby = Killed_PVP;
+				killerMob = mob->CastToMob();
+				std::string pvpKilledGuildName = GetGuildName();
+				std::string pvpKillerGuildName = killerMob->CastToClient()->GetGuildName();	
+				ProcessPVPDeath(killerMob, spell);
+				worldserver.SendEmoteMessage(0, 0, 15, "[%s] %s of <%s> has been killed in combat by %s of <%s>!", zone->GetLongName(), GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str(), killerMob->GetCleanName(), pvpKillerGuildName.empty() ? " " : pvpKillerGuildName.c_str());			
+			}
 		}
 	}
 
@@ -1464,7 +1553,7 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 			if (zone->GetGuildID() == 1)
 			{
 				std::string pvpKilledGuildName = GetGuildName();
-				entity_list.Message(0, 15, "[PVP] %s of <%s> has unalived themselves!", GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str());
+				//entity_list.Message(0, 15, "[PVP] %s of <%s> has unalived themselves!", GetCleanName(), pvpKilledGuildName.empty() ? " " : pvpKilledGuildName.c_str());
 			}
 			Log(Logs::General, Logs::Death, "%s is in a PVP situation and killedby is 0. This is likely an error due to pain and suffering, setting killedby to 4.", GetName());
 		}
@@ -1474,13 +1563,13 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 		}
 	}
 
-	uint32 cross_zone_killer_char_id = 0;
+	//uint32 cross_zone_killer_char_id = 0;
 
-	if (cross_zone_killer_char_id > 0)
-		ProcessPVPDeathCrossZone(cross_zone_killer_char_id);
+	//if (cross_zone_killer_char_id > 0)
+	//	ProcessPVPDeathCrossZone(cross_zone_killer_char_id);
 	// PVP Death in Zone
-	else if (killerMob != nullptr)
-		ProcessPVPDeath(killerMob, spell);
+	//if (killerMob != nullptr)
+	//	ProcessPVPDeath(killerMob, spell);
 
 	entity_list.RemoveFromTargets(this);
 	hate_list.RemoveEnt(this);
@@ -1495,8 +1584,9 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 	if(IsClient())
 		CastToClient()->GetExpLoss(killerMob, spell, exploss, killedby);
 
-	if (killerMob && !killerMob->IsClient() && !killerMob->IsPlayerOwned())
-		SetMana(GetMaxMana());
+	SetMana(0);
+	//if (killerMob && !killerMob->IsClient() && !killerMob->IsPlayerOwned())
+		//SetMana(GetMaxMana());
 
 	uint32 previous_level = GetLevel();
 
@@ -1518,7 +1608,10 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 			//m_epp.perAA = 0;	//reset to no AA exp on death.
 		}
 		
-		UnmemSpellAll(false);
+		if (RuleB(RoT, UnmemSpellsOnDeath)) {
+			UnmemSpellAll(false);
+		}
+		
 		if((RuleB(Character, LeaveCorpses) && GetLevel() >= RuleI(Character, DeathItemLossLevel)) || RuleB(Character, LeaveNakedCorpses) || IsHardcore() && previous_level >= RuleI(Quarm, HardcoreDeathLevel))
 		{
 
@@ -1623,6 +1716,9 @@ bool Client::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::Skill
 		We change the mob variables, not pp directly, because Save() will copy
 		from these and overwrite what we set in pp anyway
 	*/
+
+	EndPvP(); //Disable PvP timer so they can actually zone.
+
 	if(isgrouped)
 	{
 		Group *g = GetGroup();
@@ -1787,6 +1883,36 @@ bool NPC::Attack(Mob* other, int hand, int damagePct)
 		}
 	}
 
+
+ 	//Guard Assist Code
+ 	if	(
+		(IsClient() && other->IsClient()) ||
+		(HasOwner() && GetOwner()->IsClient() && other->IsClient())
+	)
+	{
+
+		std::list<Mob*> npcList;
+		entity_list.GetNearestNPCs(this, npcList, GetAssistRange()+50.f, true);
+		Mob* listMob;
+
+		auto iter = npcList.begin();
+		while (iter != npcList.end())
+		{
+			listMob = *iter;
+			if (listMob->IsNPC() && listMob->CastToNPC()->IsGuard())
+			{
+				float distance = Distance(other->GetPosition(), listMob->GetPosition());
+				if ((listMob->CheckLosFN(other) || listMob->CheckLosFN(this)) && distance <= 70) {
+					auto petorowner = GetOwnerOrSelf();
+					if (other->GetReverseFactionCon(listMob) <= petorowner->GetReverseFactionCon(listMob)) {
+						listMob->AddToHateList(this);
+					}
+				}
+			}
+			++iter;
+		}
+	}
+
 	int baseDamage = GetBaseDamage(other, hand);
 	int damageBonus = GetDamageBonus();
 	int hate = baseDamage / 2;
@@ -1873,6 +1999,12 @@ bool NPC::Attack(Mob* other, int hand, int damagePct)
 		DoRiposte(other);
 	}
 
+	if ((IsPet() && GetUltimateOwner()->IsClient()) && (other->IsClient() || other->IsPet() && other->GetUltimateOwner()->IsClient())) {
+		Client* combatant = other->IsPet() && other->GetUltimateOwner()->IsClient() ? other->GetOwner()->CastToClient() : ((other->IsClient() ? other->CastToClient() : nullptr));
+		combatant->StartPvPTimer();
+		GetOwner()->CastToClient()->StartPvPTimer();		
+	}
+
 	if (damage > 0)
 		return true;
 
@@ -1892,6 +2024,7 @@ void NPC::Damage(Mob* other, int32 damage, uint16 spell_id, EQ::skills::SkillTyp
 	}
 
 	attacked_timer.Start(CombatEventTimer_expire);
+	
 
 	//do a majority of the work...
 	CommonDamage(other, damage, spell_id, attack_skill, avoidable, buffslot, iBuffTic);
@@ -1989,6 +2122,64 @@ bool NPC::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::SkillTyp
 			this->GetNPCTypeID()
 		);
 		parse->EventNPC(EVENT_DEATH_ZONE, entity_list.GetNPCByNPCTypeID(ZONE_CONTROLLER_NPC_ID)->CastToNPC(), nullptr, export_string, 0);
+	}
+
+	//Gangsta server first npc kills handle here.
+	if (IsRaidTarget() && zone->IsKillAchievement(GetNPCTypeID()) && killerMob) {
+		if (killerMob->IsPet() && killerMob->GetUltimateOwner()->IsClient()) {
+			Mob *owner = killerMob->GetOwner();
+
+			if (owner->IsGrouped()) {
+				Group *kg = entity_list.GetGroupByClient(owner->CastToClient());
+				/* Send the kill achievement
+				* for all group members */
+				std::list<uint32>charids;
+				for (int i = 0; i < MAX_GROUP_MEMBERS; i++)
+				{
+					if (kg->members[i] != nullptr && kg->members[i]->IsClient() && IsOnHatelist(kg->members[i]))
+					{ // If Group Member is Client
+						Mob *c = kg->members[i];
+
+						zone->DoKillAchievement(GetNPCTypeID(), c->GetCleanName(), c->CastToClient()->CharacterID(), killerMob->CastToClient()->GuildID(), GetCleanName());
+
+						charids.push_back(c->CastToClient()->CharacterID());
+					}
+				}
+				charids.clear();
+			} else {
+				zone->DoKillAchievement(GetNPCTypeID(), owner->GetCleanName(), owner->CastToClient()->CharacterID(), killerMob->CastToClient()->GuildID(), GetCleanName());
+			}
+		}
+		else if (killerMob->IsClient()) {
+			if (killerMob->IsGrouped()) {
+				Group* kg = entity_list.GetGroupByClient(killerMob->CastToClient());
+				/* Send the kill achievement
+				* for all group members */
+				std::list<uint32>charids;
+				for (int i = 0; i < MAX_GROUP_MEMBERS; i++)
+				{
+					if (kg->members[i] != nullptr && kg->members[i]->IsClient() && IsOnHatelist(kg->members[i]))
+					{ // If Group Member is Client
+						Mob* c = kg->members[i];
+
+						if (killerMob->CastToClient()->IsInAGuild()) {
+							zone->DoKillAchievement(GetNPCTypeID(), killerMob->GetCleanName(), killerMob->CastToClient()->CharacterID(), killerMob->CastToClient()->GuildID(), GetCleanName());
+						} else {
+							zone->DoKillAchievement(GetNPCTypeID(), killerMob->GetCleanName(), killerMob->CastToClient()->CharacterID(), killerMob->CastToClient()->GuildID(), GetCleanName());
+						}
+						charids.push_back(c->CastToClient()->CharacterID());
+					}
+				}
+				charids.clear();
+			}
+			else {
+				if (killerMob->CastToClient()->IsInAGuild()) {
+					zone->DoKillAchievement(GetNPCTypeID(), killerMob->GetCleanName(), killerMob->CastToClient()->CharacterID(), killerMob->CastToClient()->GuildID(), GetCleanName());
+				} else {
+					zone->DoKillAchievement(GetNPCTypeID(), killerMob->GetCleanName(), killerMob->CastToClient()->CharacterID(), killerMob->CastToClient()->GuildID(), GetCleanName());
+				}
+			}
+		}
 	}
 
 	SetHP(0);
@@ -4261,6 +4452,10 @@ bool Mob::TryRootFadeByDamage(int buffslot, Mob* attacker) {
 
 		BreakChance -= BreakChance*buffs[root_buffslot].RootBreakChance/100;
 		int level_diff = attacker->GetLevel() - GetLevel();
+
+		if (IsClient() && attacker->IsClient()) { //in PvP level difference does not affect root fade chance
+			level_diff = 0;
+		}
 
 		BreakChance -= level_diff;
 

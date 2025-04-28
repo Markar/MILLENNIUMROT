@@ -2444,7 +2444,9 @@ FACTION_VALUE NPC::GetReverseFactionCon(Mob* iOther, uint32 other_guild) {
 			else {
 				return FACTION_DUBIOUSLY;
 			}
-		}
+		} else {
+			return FACTION_INDIFFERENTLY;
+		}	
 	}
 
 
@@ -2494,7 +2496,9 @@ FACTION_VALUE NPC::GetReverseFactionCon(Mob* iOther, bool ignore_feign_death, ui
 			else {
 				return FACTION_DUBIOUSLY;
 			}
-		}		
+		} else {
+			return FACTION_INDIFFERENTLY;
+		}			
 	}
 
 
@@ -2674,31 +2678,32 @@ bool NPC::IsGuard()
 	}
 	
 	switch (GetRace()) {
-
 	case QEYNOS_CITIZEN:
-		if (GetTexture() == 1) {
-			return true;
-		}
 	case IKSAR:
 		if (GetTexture() == 1) {
 			return true;
 		}
-	case FELGUARD:
-		return true;
 	case ERUDITE_CITIZEN:
-		if (GetTexture() == 0) {
-			return true;
-		}
 	case OGGOK_CITIZEN:
+	case HALAS_CITIZEN:
+	case NERIAK_CITIZEN:
+	case KALADIM_CITIZEN:
+	case FAYGUARD:
 		if (GetTexture() == 0) {
 			return true;
 		}
+	case GROBB_CITIZEN:
+	case FELGUARD:
+	case VAHSHIRGUARD:
+	case RIVERVALE_CITIZEN:
+		return true;
 	default:
-		return false;
 		break;
-	
+	}
+	if (GetPrimaryFaction() == DB_FACTION_GEM_CHOPPERS || GetPrimaryFaction() == DB_FACTION_HERETICS || GetPrimaryFaction() == DB_FACTION_KING_AKANON) { //these 3 factions of guards use player races instead of their own races so we must define them by faction.
+		return true;
+	}
 	return false;
-}
 }
 
 void NPC::DepopSwarmPets()
@@ -3478,6 +3483,14 @@ void NPC::SetSkill(EQ::skills::SkillType skill_num, uint16 value)
 	
 	skills[skill_num] = value;
 }
+ 
+ bool NPC::IsGuildmaster()
+ {
+	if (GetClass() >= 20 && GetClass() <= 35 ) {
+		return true;
+	}
+ 	return false;
+ }
 
 bool NPC::IsGuildInFTELockout(uint32 guild_id)
 {

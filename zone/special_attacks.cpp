@@ -355,7 +355,7 @@ void Client::DoBackstab(Mob* defender)
 	}
 	else
 	{
-		if (level > 54 && CastToClient()->CheckDoubleAttack())		// Chaotic Stab doesn't double, but it does skill-up
+		if (level >= RuleI(RoT, RogueDoubleBackstabLevel) && CastToClient()->CheckDoubleAttack())		// Chaotic Stab doesn't double, but it does skill-up
 			stabs = 2;
 	}
 
@@ -557,7 +557,11 @@ int Mob::DoMonkSpecialAttack(Mob* other, uint8 unchecked_type, bool fromWus)
 			skill_type = EQ::skills::SkillDragonPunch;
 			base = EQ::skills::GetSkillBaseDamage(EQ::skills::SkillDragonPunch, GetSkill(EQ::skills::SkillDragonPunch));
 			itemslot = EQ::invslot::slotHands;
-			anim_type = DoAnimation::Slam;
+			if (GetRace() == HUMAN) {
+				anim_type = DoAnimation::EagleStrike;
+			} else {
+				anim_type = DoAnimation::Slam;
+			}
 			reuse = TailRakeReuseTime;
 			break;
 		}

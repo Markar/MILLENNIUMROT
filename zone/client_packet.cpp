@@ -977,10 +977,15 @@ void Client::Handle_Connect_OP_SendExpZonein(const EQApplicationPacket *app)
 	entity_list.SendMyClientAppearance(this);
 
 	//Send AA Exp packet:
-	if (GetLevel() >= 51)
-	{
+	if (RuleB(RoT, EnableAAZones)) {
 		SendAAStats();
+	} else {
+		if (GetLevel() >= 51)
+		{
+			SendAAStats();
+		}		
 	}
+
 
 	// Send exp packets
 	outapp = new EQApplicationPacket(OP_ExpUpdate, sizeof(ExpUpdate_Struct));
@@ -1734,6 +1739,7 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 		{
 			buff.spellid = buffs[i].spellid;
 			buff.bard_modifier = buffs[i].instrumentmod;
+			buff.caster_char_id = buffs[i].caster_char_id;
 			buff.bufftype = buffs[i].bufftype ? buffs[i].bufftype : 2;
 			buff.player_id = buffs[i].casterid;
 			buff.level = buffs[i].casterlevel;
@@ -1745,6 +1751,7 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 		{
 			buff.spellid = SPELL_UNKNOWN;
 			buff.bard_modifier = 10;
+			buff.caster_char_id = 0;
 			buff.bufftype = 0;
 			buff.player_id = 0;
 			buff.level = 0;
@@ -2355,7 +2362,7 @@ void Client::Handle_OP_AutoAttack(const EQApplicationPacket *app)
 		}
 	}
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		Message(Chat::Red, "You cannot autoattack as a GM.");
 		return;
@@ -2922,7 +2929,7 @@ void Client::Handle_OP_CastSpell(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		Message(Chat::Red, "You cannot cast spells as a GM.");
 		InterruptSpell(castspell->spell_id);
@@ -3199,7 +3206,7 @@ void Client::Handle_OP_ClickObject(const EQApplicationPacket *app)
 		
 		if (object->IsPlayerDrop())
 		{
-			if (Admin() > 0)
+			if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 			{
 				msg = "You cannot pick up dropped player items because you're a GM and that would make the players around you a sad panda.";
 			}
@@ -3628,7 +3635,7 @@ void Client::Handle_OP_CombatAbility(const EQApplicationPacket *app)
 	}
 
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		Message(Chat::Red, "You cannot use abilities or thrown items as a GM.");
 		return;
@@ -4094,7 +4101,7 @@ void Client::Handle_OP_CreateObject(const EQApplicationPacket *app)
 		}
 	}
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		EQ::ItemInstance *inst = m_inv.GetItem(EQ::invslot::slotCursor);
 		if (inst)
@@ -5484,7 +5491,7 @@ void Client::Handle_OP_GroupFollow(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		Message(Chat::Red, "You are a GM. Do not join raids or groups.");
 		database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to join a group or raid.");
@@ -5680,7 +5687,7 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		Message(Chat::Red, "You are a GM. Do not join raids or groups.");
 		database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to join a group or raid.");
@@ -5706,7 +5713,7 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 				return;
 			}
 
-			if (Invitee->CastToClient()->Admin() > 0)
+			if (RuleB(RoT, DisableGMCorruption) && Invitee->CastToClient()->Admin() > 0)
 			{
 				Message(Chat::Red, "You are being invited by a GM. This will never work.");
 				database.SetHackerFlag(Invitee->CastToClient()->AccountName(), Invitee->CastToClient()->GetCleanName(), "GM attempted to join a group or raid.");
@@ -7308,7 +7315,7 @@ void Client::Handle_OP_RaidCommand(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		Message(Chat::Red, "You are a GM. Do not join raids or groups.");
 		database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to join a group or raid.");
@@ -7334,7 +7341,7 @@ void Client::Handle_OP_RaidCommand(const EQApplicationPacket *app)
 				return;
 			}
 
-			if (i->Admin() > 0)
+			if (RuleB(RoT, DisableGMCorruption) && i->Admin() > 0)
 			{
 				Message(Chat::Red, "This player is a GM and cannot join your raid.");
 				return;
@@ -8317,7 +8324,7 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (Admin() > 0 && tmpmer_used)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0 && tmpmer_used)
 	{
 		Message(Chat::Red, "That item isn't normally sold here. You are a GM. You'd be griefing players. The gods weep today.");
 		QueuePacket(returnapp);
@@ -8587,7 +8594,7 @@ void Client::Handle_OP_ShopPlayerSell(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		Message(Chat::Red, "Just use commands. You're literally a GM, silly goose.");
 		auto outapp = new EQApplicationPacket(OP_ShopPlayerSell, sizeof(OldMerchant_Purchase_Struct));
@@ -9453,7 +9460,7 @@ void Client::Handle_OP_Trader(const EQApplicationPacket *app)
 	if(zone->GetZoneID() != Zones::BAZAAR)
 		return;
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		Message(Chat::Red, "You are a GM. You cannot use the bazaar. Use the dev server for that.");
 		return;
@@ -9516,7 +9523,7 @@ void Client::Handle_OP_Trader(const EQApplicationPacket *app)
 				Message(Chat::Red, "You are solo or self found only, and cannot list or sell items in The Bazaar.");
 				return;
 			}
-			if (Admin() > 0)
+			if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 			{
 				Message(Chat::Red, "You are a GM. You cannot list items for sale. Use the dev server for that.");
 				database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to sell an item on the Bazaar.");
@@ -9664,7 +9671,7 @@ void Client::Handle_OP_TraderBuy(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (Admin() > 0)
+	if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 	{
 		Message(Chat::Red, "You are a GM. You cannot list items for sale. Use the dev server for that.");
 		database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to sell an item on the Bazaar.");
@@ -9754,7 +9761,7 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 			return;
 		}
 
-		if (Admin() > 0)
+		if (RuleB(RoT, DisableGMCorruption) && Admin() > 0)
 		{
 			Message(Chat::Red, "You are a GM. You cannot trade with other players. Use the dev server for that.");
 			database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to trade with another player instead of using GM commands.");

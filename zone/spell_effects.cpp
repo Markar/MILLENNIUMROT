@@ -917,12 +917,22 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 					break;
 				}
 
+				bool crosspell = false;
+				if (IsClient() && caster->IsClient() && this != caster &&
+					(RuleB(RoT, GroupCrossDispel) && IsGrouped() && GetGroup()->IsGroupMember(caster)))
+				{
+					crosspell = true;
+				}
+
 				int buff_count = GetMaxBuffSlots();
 				for(int slot = 0; slot < buff_count; slot++) {
 					if(	buffs[slot].spellid != SPELL_UNKNOWN &&
 						IsDispellableSpell(buffs[slot].spellid))
 					{
-						if (TryDispel(caster->GetLevel(),buffs[slot].casterlevel, effect_value)){
+						if (crosspell && IsBeneficialSpell(buffs[slot].spellid)) {
+							continue;
+						}
+						if (crosspell || TryDispel(caster->GetLevel(),buffs[slot].casterlevel, effect_value)){
 							if (effect_value == 0) {
 								if (buffs[slot].ticsremaining > 2) {
 									// taper magic, reduces buff time remaining
@@ -2255,6 +2265,12 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 				break;
 			}
 
+			case SE_SpecialAttackKBProc:
+			{
+				DoKnockback(caster, 10, 2, IsNPC());
+				//spelltar->DoKnockback(this, spells[spell_id].pushback, spells[spell_id].pushup, spelltar->IsNPC());
+			}
+
 			// Handled Elsewhere
 			case SE_ReduceReuseTimer:
 			case SE_ExtraAttackChance:
@@ -3093,8 +3109,32 @@ void Mob::DoBuffTic(uint16 spell_id, int slot, uint32 ticsremaining, uint8 caste
 
 				if (zone->random.Roll(RuleI(Spells, RootBreakCheckChance)))
 				{
-					if (CheckResistSpell(spells[spell_id].resisttype, spell_id, caster, this, false, 0, true) != 100.0f)
-						BuffFadeBySlot(slot);
+					if (this->IsClient() && caster->IsClient()) {
+						if (CheckPvPResistSpell(spells[spell_id].resisttype, spell_id, caster, this, false, 0, true) != 100.0f)
+							BuffFadeBySlot(slot);
+					} else {
+						if (CheckResistSpell(spells[spell_id].resisttype, spell_id, caster, this, false, 0, true) != 100.0f)
+							BuffFadeBySlot(slot);						
+					}
+
+				}
+
+				break;
+			}
+
+			case SE_MovementSpeed: {
+				if (IsDetrimentalSpell(spell_id)) { //detrimental movement speed means a snare
+					if (zone->random.Roll(RuleI(Spells, SnareBreakCheckChance)))
+					{
+						if (this->IsClient() && caster->IsClient()) {
+							if (CheckPvPResistSpell(spells[spell_id].resisttype, spell_id, caster, this, false, 0, true) != 100.0f)
+								BuffFadeBySlot(slot);
+						} else {
+							if (CheckResistSpell(spells[spell_id].resisttype, spell_id, caster, this, false, 0, true) != 100.0f)
+								BuffFadeBySlot(slot);						
+						}
+	
+					}
 				}
 
 				break;
@@ -3103,11 +3143,20 @@ void Mob::DoBuffTic(uint16 spell_id, int slot, uint32 ticsremaining, uint8 caste
 			case SE_Blind: {
 				if (zone->random.Roll(RuleI(Spells, BlindBreakCheckChance)))
 				{
-					if (CheckResistSpell(spells[spell_id].resisttype, spell_id, caster, this, false, 0, true) != 100.0f)
-					{
-						BuffFadeBySlot(slot);
-						break;
+					if (this->IsClient() && caster->IsClient()) {
+						if (CheckPvPResistSpell(spells[spell_id].resisttype, spell_id, caster, this, false, 0, true) != 100.0f)
+						{
+							BuffFadeBySlot(slot);
+							break;
+						}
+					} else {
+						if (CheckResistSpell(spells[spell_id].resisttype, spell_id, caster, this, false, 0, true) != 100.0f)
+						{
+							BuffFadeBySlot(slot);
+							break;
+						}						
 					}
+
 				}
 
 				// if target is moving, then blind has a high chance to run toward target

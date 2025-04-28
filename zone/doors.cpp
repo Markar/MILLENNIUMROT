@@ -193,6 +193,10 @@ bool Doors::Process()
 
 void Doors::HandleClick(Client* sender, uint8 trigger, bool floor_port)
 {
+	if (sender->IsStunned() || sender->IsMezzed()) {
+		return;
+	}
+	
 	//door debugging info dump
 	Log(Logs::General, Logs::Doors, "%s clicked door %s (dbid %d, eqid %d) at %s", sender->GetName(), this->door_name, this->database_id, this->door_id, to_string(m_position).c_str());
 	Log(Logs::Detail, Logs::Doors, "  incline %d, opentype %d, lockpick %d, keys %d %d, nokeyring %d, trigger %d type %d, param %d", this->incline, this->open_type, this->lockpick, this->key_item_id, this->alt_key_item_id, this->no_key_ring, this->trigger_door, this->trigger_type, this->door_param);
@@ -515,7 +519,7 @@ bool Doors::DoorKeyCheck(Client* sender, uint32& key)
 
 	key = player_key;
 
-	if ((required_key_item == 0 && alternate_key_item == 0 && GetLockpick() == 0) || (IsDoorOpen() && open_type == 58)) {
+	if ((RuleB(RoT, NoLockedDoors)) || (required_key_item == 0 && alternate_key_item == 0 && GetLockpick() == 0) || (IsDoorOpen() && open_type == 58)) {
 		//door not locked
 		return true;
 	} else {

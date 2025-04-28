@@ -327,8 +327,9 @@ public:
 	void SendPVPStats();
 	
 	bool InPvP() { return in_pvp_timer.Enabled(); }
+	inline void EndPvP() { in_pvp_timer.Disable(); }
 	uint32 GetPvPTimer() { return in_pvp_timer.GetRemainingTime(); }
-	inline void StartPvPTimer() { in_pvp_timer.Start(RuleI(RoT, PvPTimer)); Message(Chat::Yellow, "You are now flagged as in PvP."); }
+	inline void StartPvPTimer() { if (!in_pvp_timer.Enabled()) { Message(Chat::Yellow, "You are now flagged as in PvP."); } in_pvp_timer.Start(RuleI(RoT, PvPTimer)); }
 	
 
 	void	AI_Init();
@@ -765,6 +766,7 @@ public:
 	FACTION_VALUE GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 p_race, uint32 p_class, uint32 p_deity, int32 pFaction, Mob* tnpc, uint32 p_guild = 0);
 	FACTION_VALUE GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 p_race, uint32 p_class, uint32 p_deity, int32 pFaction, Mob* tnpc, bool ignore_feign_death);
 	
+	int16 GetFactionValue(Mob* tnpc);
 	int32 GetCharacterFactionLevel(int32 faction_id);
 	int32 GetModCharacterFactionLevel(int32 faction_id, bool skip_illusions = false);
 	void MerchantRejectMessage(Mob *merchant, int primaryfaction);
@@ -1619,6 +1621,11 @@ private:
 
 	void UpdateZoneChangeCount(uint32 zoneid);
 
+	//pvp stuff
+	void PlayerDmg(uint32 char_id, uint32 damage);
+	void PlayerDmg(Client* in_mob, uint32 damage);
+	uint32 last_attack_character_id;
+	uint32 pvp_damage_taken;
 
 	bool clicky_override; // On AK, clickies with 0 casttime did not enforce any restrictions (level, regeant consumption, etc) 
 	uint8 active_disc;

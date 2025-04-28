@@ -166,6 +166,7 @@ public:
 	bool	DatabaseCastAccepted(int spell_id);
 	bool	IsFactionListAlly(uint32 other_faction);
 	bool	IsGuard();
+	bool 	IsGuildmaster();
 	FACTION_VALUE CheckNPCFactionAlly(int32 other_faction);
 	virtual FACTION_VALUE GetReverseFactionCon(Mob* iOther, uint32 other_guild = 0);
 	virtual FACTION_VALUE GetReverseFactionCon(Mob* iOther, bool ignore_feign_death, uint32 other_guild = 0);

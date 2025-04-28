@@ -209,6 +209,11 @@ void Lua_NPC::SetGuild(int guild_id) {
 	self->SetGuild(guild_id);
 }
 
+void Lua_NPC::SetHostile(bool hostile) {
+	Lua_Safe_Call_Void();
+	self->SetHostile(hostile);
+}
+
 void Lua_NPC::PickPocket(Lua_Client thief) {
 	Lua_Safe_Call_Void();
 	self->PickPocket(thief);
@@ -701,6 +706,7 @@ luabind::scope lua_register_npc() {
 		.def("GetMaxDamage", (uint32(Lua_NPC::*)(int))&Lua_NPC::GetMaxDamage)
 		.def("SetTaunting", (void(Lua_NPC::*)(bool))&Lua_NPC::SetTaunting)
 		.def("SetGuild", (void(Lua_NPC::*)(int32))&Lua_NPC::SetGuild)
+		.def("SetHostile", (void(Lua_NPC::*)(bool))&Lua_NPC::SetHostile)
 		.def("PickPocket", (void(Lua_NPC::*)(Lua_Client))&Lua_NPC::PickPocket)
 		.def("StartSwarmTimer", (void(Lua_NPC::*)(uint32))&Lua_NPC::StartSwarmTimer)
 		.def("DoClassAttacks", (void(Lua_NPC::*)(Lua_Mob))&Lua_NPC::DoClassAttacks)

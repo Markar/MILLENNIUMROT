@@ -1996,6 +1996,36 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, ui
 	if(!IsValidSpell(spell_id))
 		return false;
 
+	//Guard Assist Code
+	if	(
+		spell_target && IsDetrimentalSpell(spell_id) && spell_target != this
+	)
+	{
+		if (IsClient() && spell_target->IsClient()|| (HasOwner() && GetOwner()->IsClient() && spell_target->IsClient())) {
+			std::list<Mob*> npcList;
+			entity_list.GetNearestNPCs(this, npcList, GetAssistRange()+50.f, true);
+			Mob* listMob;
+
+			auto iter = npcList.begin();
+			while (iter != npcList.end())
+			{
+				listMob = *iter;
+				if (listMob->IsNPC() && listMob->CastToNPC()->IsGuard())
+				{
+					float distance = Distance(spell_target->GetPosition(), listMob->GetPosition());
+					if ((listMob->CheckLosFN(spell_target) || listMob->CheckLosFN(this)) && distance <= 70) {
+						auto petorowner = GetOwnerOrSelf();
+						if (spell_target->GetReverseFactionCon(listMob) <= petorowner->GetReverseFactionCon(listMob)) {
+							listMob->AddToHateList(this);
+						}
+					}
+				}
+				++iter;
+			}
+		}
+	}
+
+
 	if( spells[spell_id].zonetype == 1 && !zone->CanCastOutdoor()){
 		if(IsClient()){
 			if(!CastToClient()->GetGM()){
@@ -3215,7 +3245,12 @@ bool Mob::SpellOnTarget(uint16 spell_id, Mob* spelltar, bool reflect, bool use_r
 
 	Log(Logs::Detail, Logs::Spells, "Checking Resists for spell %d", spell_id);
 	if(!is_tap_recourse && IsResistableSpell(spell_id)) {
-		spell_effectiveness = spelltar->CheckResistSpell(spells[spell_id].resisttype, spell_id, this, spelltar, use_resist_adjust, resist_adjust);
+		if ((IsClient() || (IsPet() && GetUltimateOwner()->IsClient())) && (spelltar->IsClient() || (spelltar->IsPet() && spelltar->GetUltimateOwner()->IsClient()))) { //Player Pets attacking players, players attacking player pets, or PvP trigger a special PvP resist check
+			spell_effectiveness = spelltar->CheckPvPResistSpell(spells[spell_id].resisttype, spell_id, this, spelltar, use_resist_adjust, resist_adjust);
+		} else {
+			spell_effectiveness = spelltar->CheckResistSpell(spells[spell_id].resisttype, spell_id, this, spelltar, use_resist_adjust, resist_adjust);
+		}
+		
 
 		if(spell_effectiveness < 100) {
 			if(spell_effectiveness == 0 || !IsPartialCapableSpell(spell_id) ) {
@@ -4279,6 +4314,231 @@ float Mob::CheckResistSpell(uint8 resist_type, uint16 spell_id, Mob *caster, Mob
 					partial_modifier += (int)((target_level - caster_level) * 1.5);
 				}
 			}
+			
+			if(partial_modifier <= 0) {
+				return 100;
+			}
+			else if(partial_modifier >= 100) {
+				return 0;
+			}
+
+			return (100.0f - partial_modifier);
+		}
+	}
+}
+
+float Mob::CheckPvPResistSpell(uint8 resist_type, uint16 spell_id, Mob *caster, Mob *target, bool use_resist_override, int resist_override, bool tick_save)
+{
+	if (!caster) {
+		return 100;
+	}
+
+	if (casting_gm_override == 1) {
+		return 100;
+	}
+
+	if (spell_id != 0 && !IsValidSpell(spell_id)) {
+		return 0;
+	}
+
+	if(GetSpecialAbility(SpecialAbility::MagicImmunity)) {
+		Log(Logs::Detail, Logs::Spells, "We are immune to magic, so we fully resist the spell %d", spell_id);
+		return(0);
+	}
+
+	//Get resist modifier and adjust it based on focus 2 resist about eq to 1% resist chance
+	int resist_modifier = (use_resist_override) ? resist_override : spells[spell_id].ResistDiff;
+
+	//Check for fear resist
+	bool IsFear = false;
+	if(IsFearSpell(spell_id)) {
+		IsFear = true;
+		int fear_resist_bonuses = CalcFearResistChance();
+		if(zone->random.Roll(fear_resist_bonuses)) {
+			Log(Logs::Detail, Logs::Spells, "Resisted spell in fear resistance, had %d chance to resist", fear_resist_bonuses);
+			return 0;
+		}
+	}
+
+	if (!tick_save) {
+		// Check for Chance to Resist Spell bonuses (ie Sanctification Discipline)
+		int resist_bonuses = CalcResistChanceBonus();
+		if(resist_bonuses && zone->random.Roll(resist_bonuses)) {
+			Log(Logs::Detail, Logs::Spells, "Resisted spell in sanctification, had %d chance to resist", resist_bonuses);
+			return 0;
+		}
+	}
+
+	//Get the resist chance for the target
+	if(resist_type == RESIST_NONE) {
+		Log(Logs::Detail, Logs::Spells, "Spell was unresistable");
+		return 100;
+	}
+
+	if (!tick_save && GetSpecialAbility(SpecialAbility::CastingFromRangeImmunity)) {
+		if (!caster->CombatRange(this)) {
+			return(0);
+		}
+	}
+
+	// SummonedPet inherits their owner's resistances in PvP
+	Mob* SummonedPet = GetOwner() && !IsCharmedPet() && GetPetType() != petHatelist && caster->IsNPC() ? GetOwner() : nullptr;
+
+	int fire = GetFR();
+	int cold = GetCR();
+	int magic = GetMR();
+	int disease = GetDR();
+	int poison = GetPR();
+
+	if (SummonedPet) {
+		int petfire = FR + itembonuses.FR;
+		int petcold = CR + itembonuses.CR;
+		int petmagic = MR + itembonuses.MR;
+		int petdisease = DR + itembonuses.DR;
+		int petpoison = PR + itembonuses.PR;
+
+		if (SummonedPet->IsClient()) { //there shouldnt be an occurance where this isnt a client but do this sanity check anyway
+			Client* owner = SummonedPet->CastToClient();
+			fire = std::max(owner->CalcFR(false, false), petfire) + spellbonuses.FR;
+			cold = std::max(owner->CalcCR(false, false), petcold) + spellbonuses.CR;
+			magic = std::max(owner->CalcMR(false, false), petmagic) + spellbonuses.MR;
+			disease = std::max(owner->CalcDR(false, false), petdisease) + spellbonuses.DR;
+			poison = std::max(owner->CalcPR(false, false), petpoison) + spellbonuses.PR;
+		}
+	}
+
+	int target_resist;
+	switch(resist_type) {
+	case RESIST_FIRE:
+		target_resist = fire;
+		break;
+	case RESIST_COLD:
+		target_resist = cold;
+		break;
+	case RESIST_MAGIC:
+		target_resist = magic;
+		break;
+	case RESIST_DISEASE:
+		target_resist = disease;
+		break;
+	case RESIST_POISON:
+		target_resist = poison;
+		break;
+	default:
+		target_resist = 0;
+		break;
+	}
+
+	//Setup our base resist chance.
+	int caster_level = caster->GetLevel();
+	if (tick_save) {
+		caster_level += 4;
+	}
+	int target_level = SummonedPet ? SummonedPet->GetLevel() : GetLevel();
+	int resist_chance = 0;
+	int level_mod = 0;
+
+	if (SummonedPet) {
+		Log(Logs::Detail, Logs::Spells, "CheckPvPResistSpell(): Pet %s is using level: %d target_resist: %d (MR: %d FR: %d CR: %d DR: %d PR: %d) Against spell %d cast by %s", GetName(), target_level, target_resist, magic, fire, cold, disease, poison, spell_id, caster->GetName());
+	}
+
+	//Adjust our resist chance based on level modifiers
+	//int leveldiff = target_level - caster_level;
+	//int temp_level_diff = leveldiff;
+	
+	if (!tick_save && caster->GetClass() == Class::Enchanter) {
+		// See http://www.eqemulator.org/forums/showthread.php?t=43370
+
+		if (IsCharmSpell(spell_id) || IsMezSpell(spell_id)) {
+			if (caster->GetCHA() > 75) {
+				resist_modifier -= (caster->GetCHA() - 75) / 8;
+			}
+
+			Log(Logs::Detail, Logs::Spells, "CheckPvPResistSpell(): Spell: %d  Charisma is modifying resist value. resist_modifier is: %i", spell_id, resist_modifier);
+		}
+	}
+
+	//make resists less effective in PvP for DDs and DoTs
+	if (IsDirectDamageSpell(spell_id) || IsDOTSpell(spell_id)) {
+		target_resist = target_resist / 2;
+	}
+
+	//In PvP players have an easier time resisting blinds (they are debilitating af)
+	if (IsBlindSpell(spell_id)) {
+		target_resist *= 2;
+	}
+
+	//Add our level, resist and -spell resist modifier to our roll chance
+	resist_chance += target_resist;
+	resist_chance += level_mod;
+
+	if (resist_chance > 200 && spells[spell_id].targettype == ST_Tap) {
+		resist_chance = 200;
+	}
+
+	int hardcap = 350;
+	if (!content_service.IsTheScarsOfVeliousEnabled()) {
+		hardcap = 250;
+	}
+
+	if (resist_chance > hardcap) {
+		resist_chance = hardcap;
+	}
+
+	if (resist_chance > 200) {
+		resist_chance = 200 + (resist_chance - 200) / 2;
+	}
+
+	resist_chance += resist_modifier;
+
+	if (tick_save) {
+		// See http://www.eqemulator.org/forums/showthread.php?t=43370
+		if (IsCharmSpell(spell_id)) {
+			if (resist_chance < RuleI(Spells, CharmMinResist)) {	// this value is 5 for non-custom servers
+				resist_chance = RuleI(Spells, CharmMinResist);
+			}
+		}
+		else if (IsRootSpell(spell_id)) {
+			if (resist_chance < RuleI(Spells, RootMinResist)) {		// this value is 5 for non-custom servers
+				resist_chance = RuleI(Spells, RootMinResist);
+			}
+		}
+		else {
+			if (resist_chance < 5) {
+				resist_chance = 5;
+			}
+		}
+	}
+
+	if (resist_chance > 150) {
+		resist_chance = 150;		// minimum 25% chance for spells to land
+	}
+	if (caster != target) { //detrimental spells that target self like manastone shouldnt flag you as PvP
+		if (caster->IsClient()) {
+			caster->CastToClient()->StartPvPTimer();
+		}
+		if (target->IsClient()) {
+			target->CastToClient()->StartPvPTimer();
+		}
+	}
+	
+	// Lull spells cannot land on players in PvP
+	if (IsHarmonySpell(spell_id)) {
+		return 0;
+	}
+
+	//Finally our roll
+	int roll = zone->random.Int(0, 200);
+	Log(Logs::Detail, Logs::Spells, "CheckPvPResistSpell(): Spell: %d roll %i > resist_chance %i", spell_id, roll, resist_chance);
+	if(roll > resist_chance) {
+		return 100;
+	}
+	else {
+		if(!IsPartialCapableSpell(spell_id) || resist_chance == 0) {
+			return 0;
+		}
+		else {
+			int partial_modifier = ((150 * (resist_chance - roll)) / resist_chance);
 			
 			if(partial_modifier <= 0) {
 				return 100;

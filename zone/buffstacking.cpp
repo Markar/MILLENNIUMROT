@@ -1353,10 +1353,14 @@ bool Mob::AssignBuffSlot(Mob *caster, uint16 spell_id, int &buffslot, int &caste
 	buffs[emptyslot].spellid = spell_id;
 	buffs[emptyslot].casterlevel = caster_level;
 	buffs[emptyslot].realcasterlevel = caster ? caster->GetLevel() : caster_level;
-	if (caster && caster->IsClient())
+	if (caster && caster->IsClient()) {
 		strcpy(buffs[emptyslot].caster_name, caster->GetName());
-	else
-		memset(buffs[emptyslot].caster_name, 0, 64);
+		buffs[emptyslot].caster_char_id = caster->CastToClient()->CharacterID();		
+	} else {
+		buffs[emptyslot].caster_char_id = 0;
+		memset(buffs[emptyslot].caster_name, 0, 64);		
+	}
+
 	buffs[emptyslot].casterid = caster ? caster->GetID() : 0;
 	buffs[emptyslot].ticsremaining = duration + extraTick;
 	buffs[emptyslot].counters = CalculateCounters(spell_id);
